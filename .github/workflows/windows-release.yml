@@ -1,0 +1,69 @@
+name: Windows EXE release
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'package.json'
+      - '.github/workflows/windows-release.yml'
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: windows-release
+  cancel-in-progress: false
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - run: npx playwright install chromium
+      - run: npm run test:ui
+      - run: npm run dist:win
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - run: npm run test:desktop
+      - name: Checksums
+        shell: pwsh
+        run: |
+          Get-ChildItem release/*.exe | ForEach-Object {
+            "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())  $($_.Name)"
+          } | Set-Content release/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-build-and-verification
+          path: |
+            release/*.exe
+            release/SHA256SUMS.txt
+            test-results/
+  publish:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: windows
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-build-and-verification
+          path: verified
+      - name: Publish verified executables
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $version = (Get-Content package.json | ConvertFrom-Json).version
+          $assets = Get-ChildItem verified -Recurse -File | Where-Object { $_.Extension -eq '.exe' -or $_.Name -eq 'SHA256SUMS.txt' } | ForEach-Object { $_.FullName }
+          gh release create "v$version" @assets --target "${{ github.sha }}" --title "DataScope v$version — Windows" --notes-file docs/RELEASE.md
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

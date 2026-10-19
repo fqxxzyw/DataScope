@@ -1743,3 +1743,41 @@ footer span:last-child {
 .prep-step p {
   font-size: 11px;
 }
+
+/* Desktop resizing, long user-provided names, and Windows display scaling. */
+.workspace, .workspace main, .page-content { min-width: 0; }
+.panel, .metric, .notice, .alert, .page-intro, .dataset-strip,
+.history-row, .feature-picker, .section-heading, .analysis-section > summary {
+  overflow-wrap: anywhere;
+}
+button { max-width: 100%; white-space: normal; }
+button svg, .brand-mark, .issue-icon, .local-dot { flex-shrink: 0; }
+button > span, button > div, .section-heading > div, .page-intro > div,
+.toolbar > *, .role-grid > *, .chart-controls > *, .feature-picker label { min-width: 0; }
+input:not([type='checkbox']), select { max-width: 100%; }
+select { text-overflow: ellipsis; }
+.dataset-strip, .topbar, .breadcrumb, .header-actions, .section-heading, footer { flex-wrap: wrap; }
+.topbar { height: auto; min-height: 88px; padding-top: 14px; padding-bottom: 14px; gap: 12px; }
+.dataset-strip b { min-width: 0; max-width: 100%; }
+.badge, .count-pill { white-space: normal; overflow-wrap: anywhere; }
+.two-col { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
+.stat-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.feature-picker label { max-width: 100%; }
+.table-scroll, .chart-scroll { max-width: 100%; }
+.sidebar { overflow-y: auto; }
+.sidebar > * { flex-shrink: 0; }
+.sidebar nav { flex-shrink: 1; }
+@media (max-width: 1100px) {
+  .overview-grid, .two-col { grid-template-columns: minmax(0, 1fr); }
+  .section-heading, .page-intro { flex-wrap: wrap; }
+  .role-grid, .chart-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .topbar { min-height: 64px; }
+  .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sidebar { overflow-y: visible; }
+}
+.column-list button { white-space: normal; overflow-wrap: anywhere; }
+@media (max-width: 900px) {
+  .column-list button { flex: 0 0 180px; }
+}

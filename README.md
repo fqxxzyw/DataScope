@@ -1,3 +1,15 @@
+## Windows 桌面版
+
+从 [Releases](https://github.com/fqxxzyw/DataScope/releases/latest) 下载：
+
+- `DataScope-1.1.0-x64-nsis.exe`：安装版，可选择安装目录。
+- `DataScope-1.1.0-x64-portable.exe`：免安装版。
+
+支持 Windows 10/11 x64，无需安装 Node.js。数据处理在本机完成，不覆盖导入的原文件。此版本未签名，首次启动可能出现 Windows 未知发布者提示。
+
+开发调试：`npm ci` → `npm run desktop`。在 Windows 构建：`npm run dist:win`，产物位于 `release/`。
+发布流程见 `.github/workflows/windows-release.yml`，包含算法、布局和实际 EXE 冒烟测试，测试通过后自动上传 Release。
+
 # DataScope · 数据集体检与 EDA 工作台
 
 **让数据，先说清自己。** 一个纯浏览器、本地优先的无代码数据分析与整理工具，采用空间分层与 Liquid Glass 风格界面。支持中文文本、表格统计、规则驱动任务适配器与可复现数据集划分。

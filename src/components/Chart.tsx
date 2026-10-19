@@ -39,15 +39,44 @@ export function Chart({
   useEffect(() => {
     if (!ref.current) return;
     const chart = echarts.init(ref.current, theme === 'dark' ? 'dark' : undefined);
+    const constrainAxis = (value: unknown): unknown => {
+      if (Array.isArray(value)) return value.map(constrainAxis);
+      if (!value || typeof value !== 'object') return value;
+      const axis = value as Record<string, unknown>;
+      return {
+        ...axis,
+        nameTruncate: { maxWidth: 120, ellipsis: '…' },
+        axisLabel: {
+          width: 90,
+          overflow: 'truncate',
+          hideOverlap: true,
+          ...(axis.axisLabel as object | undefined),
+        },
+      };
+    };
     chart.setOption({
       backgroundColor: 'transparent',
       color: ['#657fe8', '#8eaae8', '#b1a2dc'],
       textStyle: { fontFamily: 'Inter, system-ui' },
       animation: !matchMedia('(prefers-reduced-motion: reduce)').matches,
       aria: { enabled: true },
-      tooltip: { trigger: 'axis', renderMode: 'richText' },
-      grid: { top: 22, bottom: 48, left: 58, right: 20 },
       ...option,
+      grid: {
+        top: 28,
+        bottom: 55,
+        left: 24,
+        right: 24,
+        containLabel: true,
+        ...(option.grid as object | undefined),
+      },
+      tooltip: {
+        trigger: 'axis',
+        renderMode: 'richText',
+        ...(option.tooltip as object | undefined),
+        confine: true,
+      },
+      xAxis: constrainAxis(option.xAxis),
+      yAxis: constrainAxis(option.yAxis),
     });
     const ro = new ResizeObserver(() => chart.resize());
     ro.observe(ref.current);

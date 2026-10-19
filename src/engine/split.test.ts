@@ -81,3 +81,30 @@ describe('reproducible data splits', () => {
       splitDataset(d, { ...config, method: 'stratified', column: 'label', keepDuplicates: true }),
     ).toThrow());
 });
+
+it('keeps global quotas with many tiny strata', () => {
+  const tiny = {
+    ...d,
+    rows: Array.from({ length: 100 }, (_, i) => [
+      String(i),
+      `class-${Math.floor(i / 2)}`,
+      '2024-01-01',
+    ]),
+  };
+  const c = { ...config, method: 'stratified' as const, column: 'label' };
+  const result = splitDataset(tiny, c);
+  expect(result.subsets.map((s) => s.indexes.length)).toEqual([80, 10, 10]);
+  expect(new Set(result.subsets.flatMap((s) => s.indexes)).size).toBe(100);
+  expect(splitDataset(tiny, c).subsets).toEqual(result.subsets);
+});
+it('never fills a zero-ratio subset when stratifying', () => {
+  const result = splitDataset(d, {
+    ...config,
+    method: 'stratified',
+    column: 'label',
+    train: 75,
+    validation: 25,
+    test: 0,
+  });
+  expect(result.subsets.map((s) => s.indexes.length)).toEqual([75, 25, 0]);
+});
