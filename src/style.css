@@ -2228,3 +2228,31 @@ select option {
     background: #ffffff60;
   }
 }
+/* Keep the question mark beside its caption, not on an extra form row. */
+label:not(.check):has(> .help-anchor) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+}
+label:not(.check) > .help-anchor {
+  grid-column: 2;
+  grid-row: 1;
+  margin: 0;
+}
+label:not(.check):has(> .help-anchor) > select,
+label:not(.check):has(> .help-anchor) > input {
+  grid-column: 1 / -1;
+  width: 100%;
+  box-sizing: border-box;
+}
+.chart-controls,
+.processing-grid {
+  align-items: end;
+}
+.panel h2 > svg,
+.panel h3 > svg {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 5px;
+}
