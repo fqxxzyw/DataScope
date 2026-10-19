@@ -147,7 +147,7 @@ export function HelpDemo({
             role="dialog"
             aria-label={title || demo[0]}
             className="help-demo"
-            style={position}
+            style={{ ...position, maxHeight: `calc(100vh - ${position.top + 12}px)` }}
             onMouseEnter={() => {
               if (timer.current) clearTimeout(timer.current);
             }}
@@ -174,11 +174,47 @@ export function HelpDemo({
             </div>
             <div className="demo-table demo-a">
               <small>输入 A</small>
-              {demo[1]}
+              {kind === 'classes' ? (
+                <table className="demo-mini">
+                  <thead>
+                    <tr>
+                      <th>train.txt · Text</th>
+                      <th>编号</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>新闻标题</td>
+                      <td className="demo-match">3</td>
+                    </tr>
+                  </tbody>
+                </table>
+              ) : (
+                demo[1]
+              )}
             </div>
             <div className="demo-table demo-b">
               <small>操作 / 输入 B</small>
-              {demo[2]}
+              {kind === 'classes' ? (
+                <table className="demo-mini">
+                  <thead>
+                    <tr>
+                      <th>从 0 编号</th>
+                      <th>class.txt</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {['finance', 'realty', 'stocks', 'education'].map((value, i) => (
+                      <tr key={value} className={i === 3 ? 'demo-match' : ''}>
+                        <td>{i}</td>
+                        <td>{value}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                demo[2]
+              )}
             </div>
             <ArrowDown size={18} className="demo-arrow" />
             <div className="demo-result">{demo[3]}</div>

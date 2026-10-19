@@ -222,7 +222,7 @@ export function ImportStudio() {
         )}
         <div className="chart-controls">
           <label>
-            首行是什么？
+            首行是什么？ <HelpDemo kind="header" />
             <select
               aria-label="首行规则"
               value={String(option.header)}

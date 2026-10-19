@@ -2194,3 +2194,37 @@ select option {
   border: 1px solid #8d9ac72b;
   font-size: 12px;
 }
+.demo-mini {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.demo-mini td,
+.demo-mini th {
+  padding: 4px 6px !important;
+  border-bottom: 1px solid #0001;
+  white-space: normal;
+  background: transparent;
+  color: inherit;
+}
+.demo-match {
+  font-weight: 700;
+  animation: help-match 2.8s ease-in-out infinite;
+}
+@keyframes help-match {
+  0%,
+  20%,
+  100% {
+    background: transparent;
+  }
+  40%,
+  75% {
+    background: #ffffff90;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .demo-match {
+    animation: none;
+    background: #ffffff60;
+  }
+}
