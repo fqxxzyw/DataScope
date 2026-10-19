@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useStore, request } from '../store';
 import {
   profiles,
@@ -19,8 +19,10 @@ const initial: ProcessingConfig = {
   tokenize: 'none',
 };
 export function Processing() {
-  const { report: r, hasRaw, setError } = useStore();
-  const [config, setConfig] = useState(initial),
+  const { report: r, hasRaw, setError, roles, setImportFiles } = useStore();
+  const labelInput = useRef<HTMLInputElement>(null);
+  const suggestedMapping = { text: roles.text || '', label: roles.truth, labels: roles.truth };
+  const [config, setConfig] = useState<ProcessingConfig>({ ...initial, mapping: suggestedMapping }),
     [result, setResult] = useState<ProcessingResult | null>(null),
     [busy, setBusy] = useState(false);
   if (!r) return null;
@@ -54,7 +56,9 @@ export function Processing() {
             <select
               aria-label="输出适配器"
               value={config.profile}
-              onChange={(e) => update({ profile: e.target.value as Profile, mapping: {} })}
+              onChange={(e) =>
+                update({ profile: e.target.value as Profile, mapping: suggestedMapping })
+              }
             >
               {Object.entries(profiles).map(([k, p]) => (
                 <option key={k} value={k}>
@@ -63,6 +67,30 @@ export function Processing() {
               ))}
             </select>
           </label>
+        </div>
+        <div className="task-guidance">
+          <h3>你要准备什么？</h3>
+          <p>
+            {config.profile === 'fasttext'
+              ? 'fastText 分类需要正文 + 标签。标签可以是 1–10、字母或类别名称；导出时程序添加 __label__ 前缀。若标签在另一个文件中，请先添加并关联。'
+              : '先把下面的输出字段对应到你的数据列，再预览校验。数值回归、句对、NER、问答等任务分别使用对应适配器。'}
+          </p>
+          <input
+            hidden
+            type="file"
+            ref={labelInput}
+            multiple
+            accept=".csv,.tsv,.txt,.json,.jsonl"
+            onChange={(e) => {
+              const files = Array.from(e.target.files || []);
+              if (files.length) setImportFiles(files);
+              e.target.value = '';
+            }}
+          />
+          <button onClick={() => labelInput.current?.click()}>标签在另一个文件？添加并关联</button>
+          <p className="footnote">
+            进入导入页后，勾选“使用当前导入的原始数据作为主表”，选择按行对应或按编号匹配，并检查组合预览。
+          </p>
         </div>
         <div className="processing-grid">
           {(profiles[config.profile].fields as readonly string[]).map((key) => (
@@ -75,7 +103,9 @@ export function Processing() {
               >
                 <option value="">请选择源字段</option>
                 {r.columns.map((c) => (
-                  <option key={c.name}>{c.name}</option>
+                  <option key={c.name} value={c.name}>
+                    {c.name} · {c.type}
+                  </option>
                 ))}
               </select>
             </label>
@@ -121,7 +151,15 @@ export function Processing() {
           JSON。QA 偏移按 Unicode 码点验证。格式转换不等于训练可用性验证。
         </p>
         <div className="toolbar">
-          <button className="primary" disabled={!hasRaw || busy} onClick={preview}>
+          <button
+            className="primary"
+            disabled={
+              !hasRaw ||
+              busy ||
+              (profiles[config.profile].fields as readonly string[]).some((k) => !config.mapping[k])
+            }
+            onClick={preview}
+          >
             {busy ? '正在校验…' : '校验并生成预览'}
           </button>
           {!hasRaw && <span>请重新打开原文件后进行转换。</span>}

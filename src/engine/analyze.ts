@@ -36,6 +36,7 @@ export function infer(name: string, values: string[], settings: Settings): Colum
   if (a.every((v) => validDate(v.trim()))) return 'Date';
   if (/(^id$|[_-]id$|编号|序号|编码)/i.test(name) && ratio >= settings.idRatio) return 'ID';
   if (a.some((v) => /^0\d+$/.test(v)) && ratio >= settings.idRatio) return 'ID';
+  if (/label|target|class|category|类别|标签/i.test(name)) return 'Categorical';
   if (a.filter((v) => numeric(v) !== null).length / n >= settings.numericRatio) return 'Numeric';
   if (/text|sentence|review|content|评论|文本|正文/i.test(name)) return 'Text';
   if (/label|target|class|category|类别|标签/i.test(name)) return 'Categorical';
@@ -309,6 +310,8 @@ export function analyze(
       100,
     ).words;
   return {
+    generatedHeaders: data.generatedHeaders,
+    sources: data.sources,
     name: data.name,
     size: data.size,
     createdAt: new Date().toISOString(),

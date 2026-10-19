@@ -15,11 +15,15 @@ fs.mkdirSync('test-results', { recursive: true });
       const errors = [];
       page.on('pageerror', (e) => errors.push(e.message));
       await expect(page.getByText('将数据集拖到这里')).toBeVisible();
-      await page.locator('input[type=file]').setInputFiles({
-        name: 'desktop-test.csv',
-        mimeType: 'text/csv',
-        buffer: Buffer.from('id,value,label\n1,20,a\n2,30,b\n3,40,a'),
-      });
+      await page
+        .locator('input[type=file]')
+        .first()
+        .setInputFiles({
+          name: 'desktop-test.csv',
+          mimeType: 'text/csv',
+          buffer: Buffer.from('id,value,label\n1,20,a\n2,30,b\n3,40,a'),
+        });
+      await page.getByRole('button', { name: '确认数据，开始分析' }).click();
       await expect(page.locator('.dataset-strip')).toContainText('desktop-test.csv', {
         timeout: 30000,
       });
@@ -36,6 +40,7 @@ fs.mkdirSync('test-results', { recursive: true });
           await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1),
         ).toBe(true);
       }
+      await page.emulateMedia({ reducedMotion: 'reduce' });
       await page.screenshot({ path: `test-results/desktop-${scale}.png` });
       const destination = path.resolve(`test-results/desktop-${scale}.json`);
       // Electron uses a native save dialog; observe its real download lifecycle

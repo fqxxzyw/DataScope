@@ -40,7 +40,7 @@ describe('parser boundaries', () => {
     expect(d.rows).toEqual([['hi,\nworld', 'a']]);
   });
   it('keeps intentional blank TXT records', () =>
-    expect(parseDataset('a\n\nb\n', 'x.txt', 1, 'auto', true, defaults).rows).toEqual([
+    expect(parseDataset('a\n\nb\n', 'x.txt', 1, 'auto', false, defaults).rows).toEqual([
       ['a'],
       [''],
       ['b'],

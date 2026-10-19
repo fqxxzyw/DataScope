@@ -34,6 +34,7 @@ import { SettingsPage, download } from './components/AnalysisPages';
 import { Preparation } from './components/Preparation';
 import { SplitPage } from './components/SplitPage';
 import { Processing } from './components/Processing';
+import { ImportStudio } from './components/ImportStudio';
 const nav: { id: Tab; label: string; icon: typeof Activity }[] = [
   { id: 'Overview', label: '分析工作台', icon: LayoutDashboard },
   { id: 'Prepare', label: '数据整理', icon: Settings2 },
@@ -62,10 +63,7 @@ export default function App() {
   const s = useStore(),
     fileRef = useRef<HTMLInputElement>(null),
     dialogRef = useRef<HTMLDialogElement>(null);
-  const [delimiter, setDelimiter] = useState('auto'),
-    [header, setHeader] = useState(true),
-    [format, setFormat] = useState('auto'),
-    [drag, setDrag] = useState(false),
+  const [drag, setDrag] = useState(false),
     [history, setHistory] = useState<Report[]>([]),
     [palette, setPalette] = useState(false),
     [command, setCommand] = useState(''),
@@ -106,13 +104,13 @@ export default function App() {
     window.addEventListener('keydown', fn);
     return () => window.removeEventListener('keydown', fn);
   }, [s]);
-  const openFile = (file?: File) => {
-    if (!file) return;
-    if (!/\.(csv|tsv|txt|jsonl|json|conll|bio)$/i.test(file.name)) {
+  const openFiles = (files: File[]) => {
+    if (!files.length) return;
+    if (files.some((file) => !/\.(csv|tsv|txt|jsonl|json|conll|bio)$/i.test(file.name))) {
       s.setError('支持 CSV、TSV、TXT、JSON、JSONL、CoNLL 和 BIO。');
       return;
     }
-    s.load(file, delimiter, header, format);
+    s.setImportFiles(files);
   };
   const r = s.report;
   const active = nav.find((n) => n.id === (workbenchTabs.includes(s.tab) ? 'Overview' : s.tab));
@@ -174,7 +172,7 @@ export default function App() {
             </div>
           </div>
           <div className="version">
-            DATASCOPE <span>V1.0</span>
+            DATASCOPE <span>V1.2</span>
           </div>
         </div>
       </aside>
@@ -212,11 +210,12 @@ export default function App() {
         <main>
           <input
             type="file"
+            multiple
             ref={fileRef}
             hidden
             accept=".csv,.tsv,.txt,.json,.jsonl,.conll,.bio"
             onChange={(e) => {
-              openFile(e.target.files?.[0]);
+              openFiles(Array.from(e.target.files || []));
               e.target.value = '';
             }}
           />
@@ -248,7 +247,9 @@ export default function App() {
               {w}
             </p>
           ))}
-          {s.busy ? (
+          {s.importFiles ? (
+            <ImportStudio key={s.importFiles.map((f) => f.name).join('|')} />
+          ) : s.busy ? (
             <section className="glass loading" aria-live="polite">
               <div className="loading-orbit">
                 <Activity size={36} />
@@ -265,14 +266,14 @@ export default function App() {
                   <span /> PRIVATE BY DESIGN
                 </div>
                 <h1>
-                  看懂数据。
+                  从原始数据，
                   <br />
-                  <em>从一次体检开始。</em>
+                  <em>到可用的训练样本。</em>
                 </h1>
                 <p>
-                  拖入陌生的数据集，发现质量问题、理解分布，
+                  导入正文、标签或表格，先看清每一行、每一列，
                   <br />
-                  让每一个处理决定，都有依据。
+                  再选择你需要的整理、可视化与导出。
                 </p>
               </div>
               <section
@@ -285,8 +286,7 @@ export default function App() {
                 onDrop={(e) => {
                   e.preventDefault();
                   setDrag(false);
-                  if (e.dataTransfer.files.length > 1) s.setError('每次请导入一个数据集。');
-                  else openFile(e.dataTransfer.files[0]);
+                  openFiles(Array.from(e.dataTransfer.files));
                 }}
               >
                 <button
@@ -302,46 +302,9 @@ export default function App() {
                   <p>或点击选择文件</p>
                   <span className="file-types">CSV · TSV · TXT · JSONL · JSON · CoNLL</span>
                 </button>
-                <div className="import-settings">
-                  <label>
-                    数据格式
-                    <select
-                      aria-label="导入格式"
-                      value={format}
-                      onChange={(e) => setFormat(e.target.value)}
-                    >
-                      <option value="auto">自动检测</option>
-                      <option value="table">表格 CSV / TSV</option>
-                      <option value="text">纯文本（每行一条）</option>
-                      <option value="fasttext">fastText 标签文本</option>
-                      <option value="jsonl">JSON Lines</option>
-                      <option value="json">JSON 对象数组</option>
-                      <option value="conll">CoNLL / BIO</option>
-                    </select>
-                  </label>
-                  <label>
-                    分隔符
-                    <select
-                      aria-label="分隔符"
-                      value={delimiter}
-                      onChange={(e) => setDelimiter(e.target.value)}
-                    >
-                      <option value="auto">自动识别</option>
-                      <option value=",">逗号 ,</option>
-                      <option value="	">Tab</option>
-                      <option value=";">分号 ;</option>
-                      <option value="|">竖线 |</option>
-                    </select>
-                  </label>
-                  <label className="check">
-                    <input
-                      type="checkbox"
-                      checked={header}
-                      onChange={(e) => setHeader(e.target.checked)}
-                    />
-                    表格首行为表头
-                  </label>
-                </div>
+                <p className="import-help">
+                  可一次选择多个文件。下一步先预览原数据，再选择表头、分隔符和标签关联方式。
+                </p>
                 <p className="footnote">
                   UTF-8 · 最大 50 MB / 200 万单元格 · 全部计算在你的浏览器内完成
                 </p>
