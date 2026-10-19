@@ -119,11 +119,47 @@ export function splitDataset(d: Dataset, c: SplitConfig): SplitResult {
       g.push(i);
       groups.set(v, g);
     }
-    for (const [label, g] of groups) {
+    const quotas = targets.map(Math.floor);
+    const quotaOrder = targets
+      .map((v, i) => ({ i, fraction: v - quotas[i] }))
+      .sort((a, b) => b.fraction - a.fraction);
+    const extra = d.rows.length - quotas.reduce((a, b) => a + b, 0);
+    for (let i = 0; i < extra; i++) quotas[quotaOrder[i].i]++;
+    const strata = shuffle([...groups]).map(([label, g]) => {
       if (g.length < ratios.filter((r) => r > 0).length)
         warnings.push(`类别 ${label} 仅 ${g.length} 行，无法出现在每个非空子集。`);
-      allocate(shuffle(g));
+      const ids = shuffle(g);
+      const ideal = ratios.map((v) => (g.length * v) / 100);
+      const amounts = ideal.map(Math.floor);
+      amounts.forEach((n, k) => {
+        quotas[k] -= n;
+      });
+      return { ids, ideal, amounts };
+    });
+    for (const stratum of strata) {
+      const { ids, ideal, amounts } = stratum;
+      let remaining = ids.length - amounts.reduce((a, b) => a + b, 0);
+      while (remaining-- > 0) {
+        const eligible = [0, 1, 2].filter((k) => quotas[k] > 0);
+        eligible.sort(
+          (a, b) => ideal[b] - amounts[b] - (ideal[a] - amounts[a]) || quotas[b] - quotas[a],
+        );
+        const k = eligible[0];
+        amounts[k]++;
+        quotas[k]--;
+      }
+      let offset = 0;
+      amounts.forEach((n, k) => {
+        for (let i = offset; i < offset + n; i++) subsets[k].push(ids[i]);
+        offset += n;
+      });
     }
+    subsets.forEach((ids, k) => {
+      subsets[k] = shuffle(ids);
+    });
+    warnings.push(
+      '分层采用全局整数配额；小类别无法严格保持比例时优先保证总量，类别内比例可能略有偏差。',
+    );
   } else allocate(shuffle(indices));
   const countOverlap = (key: (i: number) => string) => {
     const sets = new Map<string, Set<number>>();
