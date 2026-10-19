@@ -1,3 +1,4 @@
+import { HelpDemo } from './HelpDemo';
 import { useState, useRef } from 'react';
 import { useStore, request } from '../store';
 import {
@@ -46,13 +47,15 @@ export function Processing() {
     <>
       <section className="glass panel">
         <span className="eyebrow">EXPLICIT RULES. DIFFERENT DESTINATIONS.</span>
-        <h2>同一份数据，不同的模型入口。</h2>
+        <h2>
+          同一份数据，不同的模型入口。 <HelpDemo kind={`profile-${config.profile}`} />
+        </h2>
         <p>
           明确选择适配器并映射字段，再预览、审核并另存副本。不会用大模型猜测格式，也不会修改原文件。
         </p>
         <div className="toolbar">
           <label>
-            输出适配器{' '}
+            输出适配器 <HelpDemo kind={`profile-${config.profile}`} />
             <select
               aria-label="输出适配器"
               value={config.profile}
@@ -89,13 +92,14 @@ export function Processing() {
           />
           <button onClick={() => labelInput.current?.click()}>标签在另一个文件？添加并关联</button>
           <p className="footnote">
-            进入导入页后，勾选“使用当前导入的原始数据作为主表”，选择按行对应或按编号匹配，并检查组合预览。
+            进入导入页后，勾选“使用当前导入的原始数据作为主表”，选择“类别列表”映射
+            class.txt，或按行对应 / 按编号匹配，并检查组合预览。
           </p>
         </div>
         <div className="processing-grid">
           {(profiles[config.profile].fields as readonly string[]).map((key) => (
             <label key={key}>
-              {key}
+              {key} <HelpDemo kind="mapping" title={`字段 ${key} 的用途`} />
               <select
                 aria-label={`映射 ${key}`}
                 value={config.mapping[key] || ''}
@@ -111,7 +115,9 @@ export function Processing() {
             </label>
           ))}
         </div>
-        <h3>可选处理 · 默认全部关闭</h3>
+        <h3>
+          可选处理 · 默认全部关闭 <HelpDemo kind="prepare" />
+        </h3>
         <div className="toolbar">
           {(
             [
@@ -128,13 +134,13 @@ export function Processing() {
                 checked={config[key]}
                 onChange={(e) => update({ [key]: e.target.checked })}
               />
-              {label}
+              {label} <HelpDemo kind={key} />
             </label>
           ))}
         </div>
         {config.profile === 'fasttext' && (
           <label>
-            正文分词{' '}
+            正文分词 <HelpDemo kind="tokenize" />
             <select
               aria-label="fastText 分词"
               value={config.tokenize}
@@ -215,7 +221,18 @@ export function Processing() {
         )}
       </section>
       <section className="glass panel">
-        <h2>格式与任务支持矩阵</h2>
+        <h3>各输出格式的示例</h3>
+        <div className="class-chips">
+          {Object.entries(profiles).map(([key, p]) => (
+            <span key={key}>
+              {p.title}
+              <HelpDemo kind={`profile-${key}`} />
+            </span>
+          ))}
+        </div>
+        <h2>
+          格式与任务支持矩阵 <HelpDemo kind="processing" />
+        </h2>
         <p>
           按语法与结构枚举，而非按模型名称猜测。“BERT 数据”没有统一文件格式，需由训练脚本规定字段和
           tokenizer。

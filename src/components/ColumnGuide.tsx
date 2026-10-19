@@ -1,3 +1,4 @@
+import { HelpDemo } from './HelpDemo';
 import { useState } from 'react';
 import { useStore } from '../store';
 export function ColumnGuide() {
@@ -7,6 +8,7 @@ export function ColumnGuide() {
     r?.columns.find((c) => c.type === 'Text')?.name ||
     '';
   const suggestedLabel =
+    r?.columns.find((c) => /class.*Label/i.test(c.name))?.name ||
     r?.columns.find((c) => /label|target|类别|标签/i.test(c.name))?.name ||
     r?.columns.find((c) => c.name !== suggestedText && c.unique > 1 && c.unique <= 20)?.name ||
     '';
@@ -18,7 +20,9 @@ export function ColumnGuide() {
     <section className="glass panel">
       <div className="section-heading">
         <div>
-          <h2>哪列是正文，哪列是标签？</h2>
+          <h2>
+            哪列是正文，哪列是标签？ <HelpDemo kind="mapping" />
+          </h2>
           <p>
             以下是基于列名与取值的建议，不代表已确认。标签可以是数字或字母；分类标签不按连续数值解释。
           </p>

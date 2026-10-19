@@ -1,3 +1,4 @@
+import { HelpDemo } from './HelpDemo';
 import { useState } from 'react';
 import { useStore, request, type Roles } from '../store';
 import type { ExploreConfig, ExploreResult, EvaluateResult } from '../engine/explore';
@@ -35,7 +36,9 @@ export function RolesPanel({ compact = false }: { compact?: boolean }) {
       <div className="section-heading">
         <div>
           <span className="eyebrow">YOU DEFINE THE QUESTION</span>
-          <h2>先告诉工作台，你想研究什么。</h2>
+          <h2>
+            先告诉工作台，你想研究什么。 <HelpDemo kind="mapping" />
+          </h2>
           <p>标签是已知真实结果；预测列是已有模型输出。选择角色不训练模型、不重写原始字段。</p>
         </div>
       </div>
@@ -209,7 +212,9 @@ export function ChartStudio() {
       <div className="section-heading">
         <div>
           <span className="eyebrow">BUILD YOUR OWN VIEW</span>
-          <h2>选几列，换一个角度。</h2>
+          <h2>
+            选几列，换一个角度。 <HelpDemo kind="chart" />
+          </h2>
           <p>
             先选图表：文字或分类标签适合柱状图计数；两个数值列才适合散点图。所有导入列均可选择，数字标签也可作为分类
             X。

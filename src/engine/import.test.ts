@@ -47,7 +47,10 @@ describe('guided import and labels', () => {
       rightKey: '',
       confirmOrder: true,
     });
-    expect(convert(d, config).invalid).toBe(0);
+    expect(
+      convert(d, { ...config, mapping: { text: 'data.txt · Text', labels: 'labels.txt · Number' } })
+        .invalid,
+    ).toBe(0);
     expect(d.rows).toEqual([
       ['hello', '1'],
       ['world', '2'],
@@ -96,5 +99,42 @@ describe('guided import and labels', () => {
     expect(() =>
       combineDatasets(a, b, { mode: 'append', leftKey: '', rightKey: '', confirmOrder: false }, 2),
     ).toThrow('上限');
+  });
+});
+
+describe('class list mapping', () => {
+  const classes = parse('finance\nrealty\nstocks\neducation', 'class.txt', false);
+  const c = {
+    mode: 'classes' as const,
+    leftKey: 'Number',
+    rightKey: '',
+    confirmOrder: true,
+    indexBase: 0 as const,
+  };
+  it('uses numeric IDs rather than sample row positions and preserves file identity', () => {
+    const data = parse('新闻标题\t3\n房屋新闻\t1\n财经新闻\t0', 'train.txt');
+    const result = combineDatasets(data, classes, c);
+    expect(result.rows.map((r) => r[2])).toEqual(['education', 'realty', 'finance']);
+    expect(result.headers).toEqual(['train.txt · Text', 'train.txt · Number', 'class.txt · Label']);
+    expect(
+      convert(result, {
+        ...config,
+        mapping: { text: result.headers[0], labels: result.headers[2] },
+      }).content,
+    ).toBe('__label__education 新闻标题\n__label__realty 房屋新闻\n__label__finance 财经新闻');
+    expect(data.rows[0]).toEqual(['新闻标题', '3']);
+  });
+  it('requires confirmation and rejects bad, missing or out-of-range IDs', () => {
+    expect(() => combineDatasets(parse('新闻\t0'), classes, { ...c, confirmOrder: false })).toThrow(
+      '确认',
+    );
+    for (const id of ['-1', '4', '1.2', 'x', ''])
+      expect(() => combineDatasets(parse(`新闻\t${id}\n另一条\t0`), classes, c)).toThrow();
+  });
+  it('supports explicit one-based lists and rejects duplicate category names', () => {
+    expect(combineDatasets(parse('新闻\t1'), classes, { ...c, indexBase: 1 }).rows[0][2]).toBe(
+      'finance',
+    );
+    expect(() => combineDatasets(parse('新闻\t0'), parse('A\nA'), c)).toThrow('重复');
   });
 });

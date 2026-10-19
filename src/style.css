@@ -2026,3 +2026,233 @@ select option {
 .panel small {
   font-size: 10px;
 }
+
+/* In-context instruction cards: rendered in a portal so tables cannot clip them. */
+.help-anchor {
+  display: inline-flex;
+  vertical-align: middle;
+  margin-inline: 5px;
+}
+.help-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 3px !important;
+  border-radius: 50%;
+}
+.help-demo {
+  position: fixed;
+  z-index: 10000;
+  width: min(360px, calc(100vw - 24px));
+  max-height: calc(100vh - 24px);
+  overflow: auto;
+  box-sizing: border-box;
+  padding: 18px;
+  border-radius: 22px;
+  background: var(--panel, #f4f6fc);
+  color: var(--text, #26334b);
+  border: 1px solid #8d9ac744;
+  box-shadow: 0 16px 60px #17234340;
+  backdrop-filter: blur(28px);
+  font-size: 13px;
+}
+[data-theme='dark'] .help-demo {
+  background: #20283d;
+  color: #e7eafa;
+}
+.help-demo p {
+  line-height: 1.7;
+  margin: 12px 0;
+}
+.help-demo .section-heading {
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.help-demo button {
+  padding: 4px;
+}
+.demo-table,
+.demo-result {
+  padding: 10px 12px;
+  border-radius: 12px;
+  overflow-wrap: anywhere;
+  margin-top: 8px;
+}
+.demo-table small {
+  display: block;
+  opacity: 0.7;
+  margin-bottom: 4px;
+}
+.demo-a {
+  background: #cbeadd;
+  color: #214d3e;
+}
+.demo-b {
+  background: #f6d8db;
+  color: #75373e;
+}
+.demo-arrow {
+  display: block;
+  margin: 8px auto;
+  animation: help-flow 2.8s ease-in-out infinite;
+}
+.demo-result {
+  background: #dce3fa;
+  color: #304a86;
+  animation: help-result 2.8s ease-in-out infinite;
+}
+@keyframes help-flow {
+  0%,
+  100% {
+    transform: translateY(-3px);
+    opacity: 0.45;
+  }
+  60% {
+    transform: translateY(3px);
+    opacity: 1;
+  }
+}
+@keyframes help-result {
+  0%,
+  20% {
+    opacity: 0.45;
+    transform: translateY(3px);
+  }
+  60%,
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .demo-arrow,
+  .demo-result {
+    animation: none;
+  }
+}
+.class-map-guide {
+  padding: 18px;
+  border-radius: 18px;
+  background: #b7d9c51c;
+  margin: 16px 0;
+}
+.class-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+.class-chips span {
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: #eed2d9;
+  color: #6a3545;
+  font-size: 12px;
+}
+.source-file {
+  display: block;
+  font-size: 11px;
+  opacity: 0.75;
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+.help-library {
+  margin: 12px 0 20px;
+  padding: 14px 18px;
+  border-radius: 18px;
+}
+.help-library summary {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.help-library-body {
+  padding-top: 14px;
+}
+.help-library-body > input {
+  width: 100%;
+  box-sizing: border-box;
+}
+.help-library-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 8px;
+  max-height: 360px;
+  overflow: auto;
+  margin-top: 12px;
+}
+.help-library-grid > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px;
+  border-radius: 10px;
+  border: 1px solid #8d9ac72b;
+  font-size: 12px;
+}
+.demo-mini {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.demo-mini td,
+.demo-mini th {
+  padding: 4px 6px !important;
+  border-bottom: 1px solid #0001;
+  white-space: normal;
+  background: transparent;
+  color: inherit;
+}
+.demo-match {
+  font-weight: 700;
+  animation: help-match 2.8s ease-in-out infinite;
+}
+@keyframes help-match {
+  0%,
+  20%,
+  100% {
+    background: transparent;
+  }
+  40%,
+  75% {
+    background: #ffffff90;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .demo-match {
+    animation: none;
+    background: #ffffff60;
+  }
+}
+/* Keep the question mark beside its caption, not on an extra form row. */
+label:not(.check):has(> .help-anchor) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+}
+label:not(.check) > .help-anchor {
+  grid-column: 2;
+  grid-row: 1;
+  margin: 0;
+}
+label:not(.check):has(> .help-anchor) > select,
+label:not(.check):has(> .help-anchor) > input {
+  grid-column: 1 / -1;
+  width: 100%;
+  box-sizing: border-box;
+}
+.chart-controls,
+.processing-grid {
+  align-items: end;
+}
+.panel h2 > svg,
+.panel h3 > svg {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 5px;
+}

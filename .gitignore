@@ -7,3 +7,6 @@ coverage/
 release/
 test-results/
 playwright-report/
+
+/build/icon.ico
+/electron/icon.png
