@@ -2008,3 +2008,21 @@ select option {
 .data-first .table-scroll {
   max-height: 360px;
 }
+
+.panel label,
+.panel select,
+.panel input,
+.panel button,
+.panel table {
+  font-size: 12px;
+}
+.panel p {
+  font-size: 12px;
+}
+.panel .footnote,
+.panel .preview-legend {
+  font-size: 11px;
+}
+.panel small {
+  font-size: 10px;
+}

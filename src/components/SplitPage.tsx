@@ -4,7 +4,7 @@ import type { SplitConfig, SplitResult } from '../engine/split';
 import { Bars, Chart } from './Chart';
 import { download } from './AnalysisPages';
 export function SplitPage() {
-  const { report: r, hasRaw, setError } = useStore();
+  const { report: r, hasRaw, setError, roles } = useStore();
   const [config, setConfig] = useState<SplitConfig>({
       method: 'random',
       train: 80,
@@ -12,8 +12,8 @@ export function SplitPage() {
       test: 10,
       seed: 42,
       column: '',
-      label: r?.target || '',
-      leakageColumn: '',
+      label: roles.truth || r?.target || '',
+      leakageColumn: roles.id || '',
       keepDuplicates: true,
     }),
     [result, setResult] = useState<SplitResult | null>(null),
@@ -54,6 +54,14 @@ export function SplitPage() {
                 update({
                   method: e.target.value as SplitConfig['method'],
                   keepDuplicates: e.target.value === 'random',
+                  column:
+                    e.target.value === 'stratified'
+                      ? roles.truth
+                      : e.target.value === 'time'
+                        ? roles.time
+                        : e.target.value === 'group'
+                          ? roles.id
+                          : '',
                 })
               }
             >

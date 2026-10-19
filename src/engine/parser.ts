@@ -82,6 +82,7 @@ export function parseDataset(
       values.every((v) => /^[-+]?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?$/i.test(v.trim()))
     )
       return 'Number';
+    if (values.length > 1 && values.every((v) => /^[A-Za-z]$/.test(v))) return 'Label';
     if (
       width > 1 &&
       values.length > 1 &&
