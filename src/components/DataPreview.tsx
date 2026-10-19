@@ -35,11 +35,13 @@ export function DataPreview({ issueRows }: { issueRows?: number[] }) {
   if (!hasRaw)
     return <div className="empty">历史不保存原始数据。请重新打开原始文件查看具体行。</div>;
   return (
-    <section className="glass panel">
+    <section className="glass panel data-first">
       <div className="section-heading">
         <div>
-          <h2>数据预览</h2>
-          <p>原始字符串 · 数据行号从 1 开始 · 只读</p>
+          <h2>数据预览 · 当前工作副本</h2>
+          <p>
+            首次导入保留原始字符串；整理后展示工作副本。行号从 1 开始，单元格悬停可查看完整内容。
+          </p>
         </div>
         <span className="badge">{total.toLocaleString()} 匹配行</span>
       </div>
@@ -81,13 +83,19 @@ export function DataPreview({ issueRows }: { issueRows?: number[] }) {
         </select>
       </div>
       {error && <p role="alert">{error}</p>}
-      <div className="table-scroll">
+      <p className="preview-legend">
+        绿色为数据区域；红色列名标有“系统补充”，并非原文件表头。列的数字类型不代表它一定是回归目标，也可以用作分类标签。
+      </p>
+      <div className="table-scroll raw-table">
         <table>
           <thead>
             <tr>
               <th>#</th>
               {r.columns.map((c, j) => (
-                <th key={c.name}>
+                <th
+                  key={c.name}
+                  className={r.generatedHeaders?.includes(c.name) ? 'generated-heading' : ''}
+                >
                   <button
                     onClick={() => {
                       setSort(j);
@@ -96,7 +104,10 @@ export function DataPreview({ issueRows }: { issueRows?: number[] }) {
                   >
                     {c.name} {sort === j ? (desc ? '↓' : '↑') : '↕'}
                   </button>
-                  <small>{c.type}</small>
+                  <small>
+                    {r.generatedHeaders?.includes(c.name) ? '系统补充 · ' : ''}
+                    {c.type}
+                  </small>
                 </th>
               ))}
             </tr>

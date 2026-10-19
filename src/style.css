@@ -1745,39 +1745,284 @@ footer span:last-child {
 }
 
 /* Desktop resizing, long user-provided names, and Windows display scaling. */
-.workspace, .workspace main, .page-content { min-width: 0; }
-.panel, .metric, .notice, .alert, .page-intro, .dataset-strip,
-.history-row, .feature-picker, .section-heading, .analysis-section > summary {
+.workspace,
+.workspace main,
+.page-content {
+  min-width: 0;
+}
+.panel,
+.metric,
+.notice,
+.alert,
+.page-intro,
+.dataset-strip,
+.history-row,
+.feature-picker,
+.section-heading,
+.analysis-section > summary {
   overflow-wrap: anywhere;
 }
-button { max-width: 100%; white-space: normal; }
-button svg, .brand-mark, .issue-icon, .local-dot { flex-shrink: 0; }
-button > span, button > div, .section-heading > div, .page-intro > div,
-.toolbar > *, .role-grid > *, .chart-controls > *, .feature-picker label { min-width: 0; }
-input:not([type='checkbox']), select { max-width: 100%; }
-select { text-overflow: ellipsis; }
-.dataset-strip, .topbar, .breadcrumb, .header-actions, .section-heading, footer { flex-wrap: wrap; }
-.topbar { height: auto; min-height: 88px; padding-top: 14px; padding-bottom: 14px; gap: 12px; }
-.dataset-strip b { min-width: 0; max-width: 100%; }
-.badge, .count-pill { white-space: normal; overflow-wrap: anywhere; }
-.two-col { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
-.stat-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.feature-picker label { max-width: 100%; }
-.table-scroll, .chart-scroll { max-width: 100%; }
-.sidebar { overflow-y: auto; }
-.sidebar > * { flex-shrink: 0; }
-.sidebar nav { flex-shrink: 1; }
+button {
+  max-width: 100%;
+  white-space: normal;
+}
+button svg,
+.brand-mark,
+.issue-icon,
+.local-dot {
+  flex-shrink: 0;
+}
+button > span,
+button > div,
+.section-heading > div,
+.page-intro > div,
+.toolbar > *,
+.role-grid > *,
+.chart-controls > *,
+.feature-picker label {
+  min-width: 0;
+}
+input:not([type='checkbox']),
+select {
+  max-width: 100%;
+}
+select {
+  text-overflow: ellipsis;
+}
+.dataset-strip,
+.topbar,
+.breadcrumb,
+.header-actions,
+.section-heading,
+footer {
+  flex-wrap: wrap;
+}
+.topbar {
+  height: auto;
+  min-height: 88px;
+  padding-top: 14px;
+  padding-bottom: 14px;
+  gap: 12px;
+}
+.dataset-strip b {
+  min-width: 0;
+  max-width: 100%;
+}
+.badge,
+.count-pill {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.two-col {
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+}
+.stat-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.feature-picker label {
+  max-width: 100%;
+}
+.table-scroll,
+.chart-scroll {
+  max-width: 100%;
+}
+.sidebar {
+  overflow-y: auto;
+}
+.sidebar > * {
+  flex-shrink: 0;
+}
+.sidebar nav {
+  flex-shrink: 1;
+}
 @media (max-width: 1100px) {
-  .overview-grid, .two-col { grid-template-columns: minmax(0, 1fr); }
-  .section-heading, .page-intro { flex-wrap: wrap; }
-  .role-grid, .chart-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .overview-grid,
+  .two-col {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .section-heading,
+  .page-intro {
+    flex-wrap: wrap;
+  }
+  .role-grid,
+  .chart-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 @media (max-width: 600px) {
-  .topbar { min-height: 64px; }
-  .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .sidebar { overflow-y: visible; }
+  .topbar {
+    min-height: 64px;
+  }
+  .stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .sidebar {
+    overflow-y: visible;
+  }
 }
-.column-list button { white-space: normal; overflow-wrap: anywhere; }
+.column-list button {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
 @media (max-width: 900px) {
-  .column-list button { flex: 0 0 180px; }
+  .column-list button {
+    flex: 0 0 180px;
+  }
+}
+/* A coherent desktop surface: native semantics, consistent Mica-like layers. */
+:root {
+  --surface-solid: #f5f7fc;
+  --raw: #eaf5ef;
+  --generated: #ac3d45;
+  color-scheme: light;
+}
+[data-theme='dark'] {
+  --surface-solid: #253047;
+  --raw: #213b36;
+  --generated: #ffacb3;
+  color-scheme: dark;
+}
+.modal {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  max-width: calc(100vw - 32px);
+  overflow: auto;
+}
+.modal[open] {
+  box-shadow:
+    0 24px 90px #17223c55,
+    inset 0 1px #ffffff70;
+}
+select {
+  border-radius: 10px;
+  background: var(--surface-solid);
+  min-height: 36px;
+}
+select option {
+  background: var(--surface-solid);
+  color: var(--text);
+}
+@supports (appearance: base-select) {
+  select,
+  ::picker(select) {
+    appearance: base-select;
+  }
+  select {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  ::picker(select) {
+    background: var(--surface-solid);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 6px;
+    box-shadow: 0 12px 40px #18274430;
+    max-height: 300px;
+    max-width: min(520px, 90vw);
+    overflow: auto;
+  }
+  select option {
+    padding: 9px 12px;
+    border-radius: 8px;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+  select option:hover,
+  select option:checked {
+    background: var(--subtle);
+  }
+}
+.raw-table {
+  background: var(--raw);
+  border: 1px solid #80b49a40;
+}
+.raw-table th {
+  background: var(--raw);
+}
+.raw-table th.generated-heading {
+  color: var(--generated);
+}
+.raw-table th.generated-heading small {
+  color: var(--generated);
+}
+.raw-table th input {
+  width: 180px;
+  max-width: 100%;
+  color: inherit;
+  font-weight: 600;
+}
+.preview-legend {
+  font-size: 11px;
+  margin: 10px 0;
+}
+.import-help {
+  text-align: center;
+  margin: 16px 0;
+}
+.file-tabs,
+.workflow-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr));
+  gap: 12px;
+  margin: 18px 0;
+}
+.file-tabs button,
+.workflow-cards button {
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+.workflow-cards button {
+  padding: 18px;
+  background: var(--glass);
+  border-radius: 18px;
+}
+.workflow-cards b {
+  font-size: 13px;
+}
+.workflow-cards span {
+  font-size: 11px;
+  color: var(--muted);
+}
+.task-guidance {
+  background: var(--subtle);
+  padding: 16px;
+  margin: 16px 0;
+  border-radius: 14px;
+}
+.task-guidance h3 {
+  margin-top: 0;
+}
+.task-guidance button {
+  margin-top: 12px;
+}
+.import-studio .check {
+  margin: 14px 0;
+}
+.data-first .table-scroll {
+  max-height: 360px;
+}
+
+.panel label,
+.panel select,
+.panel input,
+.panel button,
+.panel table {
+  font-size: 12px;
+}
+.panel p {
+  font-size: 12px;
+}
+.panel .footnote,
+.panel .preview-legend {
+  font-size: 11px;
+}
+.panel small {
+  font-size: 10px;
 }

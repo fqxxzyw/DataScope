@@ -33,6 +33,8 @@ export interface Dataset {
   headers: string[];
   rows: string[][];
   warnings: string[];
+  generatedHeaders?: string[];
+  sources?: string[];
 }
 export interface Stats {
   count: number;
@@ -90,6 +92,8 @@ export interface DataIssue {
   rows: number[];
 }
 export interface Report {
+  generatedHeaders?: string[];
+  sources?: string[];
   name: string;
   size: number;
   createdAt: string;
@@ -123,9 +127,10 @@ export type WorkerRequest =
   | { type: 'convert'; id: number; config: ProcessingConfig }
   | {
       type: 'load';
-      file: File;
+      file?: File;
+      dataset?: Dataset;
       delimiter: string;
-      header: boolean;
+      header: boolean | 'auto';
       settings: Settings;
       format?: string;
     }

@@ -6,16 +6,20 @@ for (const width of [720, 960, 1280, 1920]) {
     await page.setViewportSize({ width, height: 720 });
     await page.goto('/');
     const long = '超长字段名称_LongColumn_'.repeat(12);
-    await page.locator('input[type=file]').setInputFiles({
-      name: '超长数据文件名称_'.repeat(12) + '.csv',
-      mimeType: 'text/csv',
-      buffer: Buffer.from(
-        `id,${long},label\n` +
-          Array.from({ length: 120 }, (_, i) => `${i},${i * 2},${i % 2 ? '正面' : '负面'}`).join(
-            '\n',
-          ),
-      ),
-    });
+    await page
+      .locator('input[type=file]')
+      .first()
+      .setInputFiles({
+        name: '超长数据文件名称_'.repeat(12) + '.csv',
+        mimeType: 'text/csv',
+        buffer: Buffer.from(
+          `id,${long},label\n` +
+            Array.from({ length: 120 }, (_, i) => `${i},${i * 2},${i % 2 ? '正面' : '负面'}`).join(
+              '\n',
+            ),
+        ),
+      });
+    await page.getByRole('button', { name: '确认数据，开始分析' }).click();
     await expect(page.locator('.dataset-strip')).toBeVisible({ timeout: 30000 });
     const check = async () => {
       await expect

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import {
   defaults,
   type Settings,
+  type Dataset,
   type Report,
   type ColumnType,
   type WorkerRequest,
@@ -69,6 +70,7 @@ function stopWorker() {
   waiting.clear();
 }
 export interface Roles {
+  text?: string;
   truth: string;
   prediction: string;
   features: string[];
@@ -77,6 +79,9 @@ export interface Roles {
   task: 'classification' | 'regression';
 }
 interface State {
+  importFiles: File[] | null;
+  setImportFiles: (files: File[] | null) => void;
+  sourceDataset: Dataset | null;
   roles: Roles;
   setRoles: (roles: Roles) => void;
   report: Report | null;
@@ -96,7 +101,12 @@ interface State {
   toggleTheme: () => void;
   toggleSidebar: () => void;
   setError: (error: string) => void;
-  load: (file: File, delimiter: string, header: boolean, format?: string) => void;
+  load: (
+    file: File | Dataset,
+    delimiter: string,
+    header: boolean | 'auto',
+    format?: string,
+  ) => void;
   cancel: () => void;
   recompute: (settings: Settings, overrides?: Record<string, ColumnType>, target?: string) => void;
   openHistory: (report: Report) => void;
@@ -136,6 +146,9 @@ const tabs: Tab[] = [
   'Prepare',
 ];
 export const useStore = create<State>((set, get) => ({
+  importFiles: null,
+  setImportFiles: (importFiles) => set({ importFiles, error: '', notice: '' }),
+  sourceDataset: null,
   roles: { truth: '', prediction: '', features: [], id: '', time: '', task: 'classification' },
   setRoles: (roles) => set({ roles }),
   report: null,
@@ -168,6 +181,8 @@ export const useStore = create<State>((set, get) => ({
     stopWorker();
     set({
       busy: true,
+      importFiles: null,
+      sourceDataset: file instanceof File ? null : file,
       progress: 0,
       status: '准备读取',
       error: '',
@@ -214,7 +229,7 @@ export const useStore = create<State>((set, get) => ({
       };
       worker.postMessage({
         type: 'load',
-        file,
+        ...(file instanceof File ? { file } : { dataset: file }),
         delimiter,
         header,
         format,
@@ -251,6 +266,17 @@ export const useStore = create<State>((set, get) => ({
   openHistory: (report) => {
     stopWorker();
     set({
+      sourceDataset: null,
+      importFiles: null,
+      roles: {
+        text: '',
+        truth: '',
+        prediction: '',
+        features: [],
+        id: '',
+        time: '',
+        task: 'classification',
+      },
       report,
       settings: report.settings,
       hasRaw: false,

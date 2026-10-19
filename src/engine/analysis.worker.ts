@@ -16,20 +16,23 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
   const m = e.data;
   try {
     if (m.type === 'load') {
-      if (m.file.size > m.settings.maxFileMB * 1024 * 1024)
+      if (m.file && m.file.size > m.settings.maxFileMB * 1024 * 1024)
         throw new Error('文件超过 50 MB 保护上限，请拆分后导入。');
       send({ type: 'progress', value: 5, message: '读取 UTF-8 文件' });
-      const text = await m.file.text();
+      const text = m.file ? await m.file.text() : '';
       send({ type: 'progress', value: 25, message: '解析数据结构' });
-      dataset = parseInput(
-        text,
-        m.file.name,
-        m.file.size,
-        m.delimiter,
-        m.header,
-        m.settings,
-        m.format,
-      );
+      if (!m.dataset && !m.file) throw new Error('没有导入数据');
+      dataset =
+        m.dataset ||
+        parseInput(
+          text,
+          m.file?.name || 'dataset',
+          m.file?.size || 0,
+          m.delimiter,
+          m.header,
+          m.settings,
+          m.format,
+        );
       original = dataset;
       undo.length = 0;
       send({

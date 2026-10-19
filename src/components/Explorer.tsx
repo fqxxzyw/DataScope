@@ -13,17 +13,19 @@ export function RolesPanel({ compact = false }: { compact?: boolean }) {
     );
     setRoles(next);
   };
-  const select = (key: 'truth' | 'prediction' | 'id' | 'time', label: string) => (
+  const select = (key: 'text' | 'truth' | 'prediction' | 'id' | 'time', label: string) => (
     <label>
       {label}
       <select
         aria-label={label}
-        value={roles[key]}
+        value={roles[key] || ''}
         onChange={(e) => update({ [key]: e.target.value })}
       >
-        <option value="">未指定</option>
+        <option value="">请选择；不使用此角色可留空</option>
         {r.columns.map((c) => (
-          <option key={c.name}>{c.name}</option>
+          <option key={c.name} value={c.name}>
+            {c.name} · {c.type}
+          </option>
         ))}
       </select>
     </label>
@@ -38,6 +40,7 @@ export function RolesPanel({ compact = false }: { compact?: boolean }) {
         </div>
       </div>
       <div className="role-grid">
+        {select('text', '正文 / Text 列')}
         {select('truth', '真实标签列')}
         {select('prediction', '预测结果列')}
         <label>
@@ -207,7 +210,10 @@ export function ChartStudio() {
         <div>
           <span className="eyebrow">BUILD YOUR OWN VIEW</span>
           <h2>选几列，换一个角度。</h2>
-          <p>自由组合字段、分组与聚合。基于全表计算，展示上限会明确注明。</p>
+          <p>
+            先选图表：文字或分类标签适合柱状图计数；两个数值列才适合散点图。所有导入列均可选择，数字标签也可作为分类
+            X。
+          </p>
         </div>
         <span className="badge">交互式图表工作台</span>
       </div>
@@ -236,9 +242,11 @@ export function ChartStudio() {
               value={config[key]}
               onChange={(e) => update({ [key]: e.target.value })}
             >
-              <option value="">不选择</option>
+              <option value="">按图表需要选择（计数图不需要 Y）</option>
               {r.columns.map((c) => (
-                <option key={c.name}>{c.name}</option>
+                <option key={c.name} value={c.name}>
+                  {c.name} · {c.type}
+                </option>
               ))}
             </select>
           </label>

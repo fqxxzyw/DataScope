@@ -73,7 +73,7 @@ export function parseInput(
   name: string,
   size: number,
   delimiter: string,
-  header: boolean,
+  header: boolean | 'auto',
   settings: Settings,
   format = 'auto',
 ): Dataset {
@@ -95,7 +95,7 @@ export function parseInput(
   }
   if (chosen === 'table') return parseDataset(text, name, size, delimiter, header, settings);
   if (chosen === 'text')
-    return { ...parseDataset(text, 'plain.txt', size, 'auto', false, settings), name };
+    return { ...parseDataset(text, 'plain.txt', size, '__plain__', false, settings), name };
   const warnings = [`已按 ${chosen} 规则读取；请核对字段及任务含义。`];
   if (text.includes('\uFFFD')) warnings.push('文件可能不是 UTF-8 编码。');
   let headers: string[] = [],

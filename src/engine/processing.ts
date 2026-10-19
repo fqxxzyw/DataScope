@@ -50,6 +50,8 @@ function stringArray(value: string): string[] {
   } catch {
     return [value];
   }
+  if (typeof v === 'number' || typeof v === 'boolean' || v === null) return [value];
+  if (typeof v === 'string') return [v];
   if (!Array.isArray(v) || !v.every((t) => typeof t === 'string'))
     throw new Error('标签需为字符串或 JSON 字符串数组');
   return v;

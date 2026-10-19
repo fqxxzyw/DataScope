@@ -249,6 +249,35 @@ export function Preparation() {
             保存操作配方
           </button>
         </div>
+        <div className="task-guidance">
+          <h3>快速开始：文本分类整理</h3>
+          <p>
+            先在工作台确认正文和标签。这个配方会去首尾空白、检查必需列空值并按正文与标签去重；先预览影响行数，再决定是否应用。
+          </p>
+          <button
+            disabled={!roles.text || busy}
+            onClick={() => {
+              const columns = [roles.text!, roles.truth].filter(Boolean);
+              const base = {
+                column: roles.text!,
+                columns,
+                other: '',
+                value: '',
+                name: '',
+                method: '',
+              };
+              setSteps([
+                { ...base, id: 'preset-trim', operation: 'trim' },
+                { ...base, id: 'preset-empty', operation: 'drop_missing' },
+                { ...base, id: 'preset-dedup', operation: 'deduplicate' },
+              ]);
+              setResult(null);
+              setApplied(false);
+            }}
+          >
+            生成文本分类整理配方
+          </button>
+        </div>
         {steps.map((s, i) => (
           <article className="prep-step" key={s.id}>
             <div className="section-heading">

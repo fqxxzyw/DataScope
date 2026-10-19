@@ -1,6 +1,6 @@
 {
   "name": "datascope",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Privacy-first local dataset health and EDA workbench",
   "main": "electron/main.cjs",
   "scripts": {
