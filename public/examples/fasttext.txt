@@ -1,0 +1,3 @@
+__label__positive 酒店 干净 位置 方便
+__label__negative 房间 很 吵
+__label__positive __label__service 服务 很 好

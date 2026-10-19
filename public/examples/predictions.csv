@@ -1,0 +1,7 @@
+text,label,prediction,score,price,user_id,date
+酒店干净,positive,positive,4.8,320,u1,2026-01-01
+房间吵,negative,positive,2.1,280,u2,2026-01-02
+位置便利,positive,positive,4.3,400,u3,2026-01-03
+服务差,negative,negative,1.5,190,u4,2026-01-04
+一般,neutral,neutral,3.0,220,u5,2026-01-05
+早餐不错,positive,neutral,4.0,340,u6,2026-01-06
