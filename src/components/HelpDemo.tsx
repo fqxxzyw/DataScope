@@ -1,4 +1,4 @@
-import { useId, useState, useRef, useEffect } from 'react';
+import { useId, useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { prepDemos, profileDemos, extraDemos } from './helpCatalog';
 import { CircleHelp, ArrowDown, X } from 'lucide-react';
@@ -105,6 +105,13 @@ export function HelpDemo({
   const [position, setPosition] = useState({ top: 12, left: 12 });
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const button = useRef<HTMLButtonElement>(null);
+  const card = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    if (!open || !card.current || !button.current) return;
+    const height = card.current.getBoundingClientRect().height;
+    const anchor = button.current.getBoundingClientRect();
+    card.current.style.top = `${Math.max(12, Math.min(anchor.bottom + 8, window.innerHeight - height - 12))}px`;
+  }, [open, position]);
   const demo = demos[kind] || demos.prepare;
   const closeSoon = () => {
     if (pinned.current) return;
@@ -144,10 +151,11 @@ export function HelpDemo({
         createPortal(
           <aside
             id={id}
+            ref={card}
             role="dialog"
             aria-label={title || demo[0]}
             className="help-demo"
-            style={{ ...position, maxHeight: `calc(100vh - ${position.top + 12}px)` }}
+            style={{ ...position, maxHeight: 'calc(100vh - 24px)' }}
             onMouseEnter={() => {
               if (timer.current) clearTimeout(timer.current);
             }}

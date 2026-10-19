@@ -89,6 +89,11 @@ test('class list maps IDs to names and explains the workflow without modifying s
   await expect(page.getByRole('dialog', { name: 'class + train → fastText' })).toContainText(
     '__label__education',
   );
+  const help = page.getByRole('dialog', { name: 'class + train → fastText' });
+  const helpBox = await help.boundingBox();
+  expect(helpBox!.y).toBeGreaterThanOrEqual(0);
+  expect(helpBox!.y + helpBox!.height).toBeLessThanOrEqual(page.viewportSize()!.height);
+  await expect(help.locator('.demo-result')).toBeInViewport();
   await page.screenshot({ path: 'test-results/class-mapping-help.png', fullPage: true });
   await page.getByRole('button', { name: '关闭动画帮助' }).click();
   await page.getByRole('button', { name: '确认数据，开始分析' }).click();
