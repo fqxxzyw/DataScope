@@ -1,5 +1,7 @@
 const { _electron: electron, expect } = require('@playwright/test');
 const path = require('node:path');
+const fs = require('node:fs');
+fs.mkdirSync('test-results', { recursive: true });
 (async () => {
   const executablePath =
     process.env.DATASCOPE_EXE || path.resolve('release/win-unpacked/DataScope.exe');
@@ -13,13 +15,11 @@ const path = require('node:path');
       const errors = [];
       page.on('pageerror', (e) => errors.push(e.message));
       await expect(page.getByText('将数据集拖到这里')).toBeVisible();
-      await page
-        .locator('input[type=file]')
-        .setInputFiles({
-          name: 'desktop-test.csv',
-          mimeType: 'text/csv',
-          buffer: Buffer.from('id,value,label\n1,20,a\n2,30,b\n3,40,a'),
-        });
+      await page.locator('input[type=file]').setInputFiles({
+        name: 'desktop-test.csv',
+        mimeType: 'text/csv',
+        buffer: Buffer.from('id,value,label\n1,20,a\n2,30,b\n3,40,a'),
+      });
       await expect(page.locator('.dataset-strip')).toContainText('desktop-test.csv', {
         timeout: 30000,
       });
@@ -36,13 +36,29 @@ const path = require('node:path');
           await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1),
         ).toBe(true);
       }
-      await page.getByRole('button', { name: '导出报告', exact: true }).click();
-      const downloadPromise = page.waitForEvent('download');
-      await page.getByRole('button', { name: /JSON 分析结果/ }).click();
-      const download = await downloadPromise;
-      expect(download.suggestedFilename()).toBe('desktop-test.csv-analysis.json');
-      await download.saveAs(path.resolve(`test-results/desktop-${scale}.json`));
       await page.screenshot({ path: `test-results/desktop-${scale}.png` });
+      const destination = path.resolve(`test-results/desktop-${scale}.json`);
+      // Electron uses a native save dialog; observe its real download lifecycle
+      // and select a destination in the test instead of waiting on browser CDP downloads.
+      await app.evaluate(({ session }, savePath) => {
+        globalThis.downloadResult = null;
+        session.defaultSession.once('will-download', (_event, item) => {
+          const filename = item.getFilename();
+          item.setSavePath(savePath);
+          item.once('done', (_event, state) => {
+            globalThis.downloadResult = { filename, state };
+          });
+        });
+      }, destination);
+      await page.getByRole('button', { name: '导出报告', exact: true }).click();
+      await page.getByRole('button', { name: /JSON 分析结果/ }).click();
+      await expect
+        .poll(() => app.evaluate(() => globalThis.downloadResult), { timeout: 30000 })
+        .toEqual({
+          filename: 'desktop-test.csv-analysis.json',
+          state: 'completed',
+        });
+      expect(JSON.parse(fs.readFileSync(destination, 'utf8')).name).toBe('desktop-test.csv');
       expect(errors).toEqual([]);
     } finally {
       await app.close();
