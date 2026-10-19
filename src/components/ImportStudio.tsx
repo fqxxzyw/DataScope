@@ -11,6 +11,7 @@ export function ImportStudio() {
   const [options, setOptions] = useState<Record<number, Options>>({});
   const [errors, setErrors] = useState<Record<number, string>>({});
   const [active, setActive] = useState(0);
+  const [editError, setEditError] = useState('');
   const [primary, setPrimary] = useState(0);
   const [secondary, setSecondary] = useState(1);
   const [mode, setMode] = useState<'single' | CombineConfig['mode']>('single');
@@ -97,10 +98,16 @@ export function ImportStudio() {
                     key={`${active}-${h}`}
                     onBlur={(e) => {
                       const name = e.target.value.trim();
+                      if (name === h) {
+                        setEditError('');
+                        return;
+                      }
                       if (!name || data.headers.some((v, j) => j !== i && v === name)) {
+                        setEditError('列名不能为空或重复，请为每一列使用不同名称。');
                         e.target.value = h;
                         return;
                       }
+                      setEditError('');
                       setDatasets((old) =>
                         old.map((v, k) =>
                           k === active && v
@@ -183,6 +190,21 @@ export function ImportStudio() {
             </button>
           ))}
         </div>
+        <div className="toolbar">
+          <button
+            onClick={() => {
+              const next = files.filter((_, i) => i !== active);
+              setImportFiles(next.length ? next : null);
+            }}
+          >
+            移除当前文件
+          </button>
+        </div>
+        {editError && (
+          <p className="notice" role="alert">
+            {editError}
+          </p>
+        )}
         <div className="chart-controls">
           <label>
             首行是什么？

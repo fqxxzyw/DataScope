@@ -147,7 +147,7 @@ const tabs: Tab[] = [
 ];
 export const useStore = create<State>((set, get) => ({
   importFiles: null,
-  setImportFiles: (importFiles) => set({ importFiles }),
+  setImportFiles: (importFiles) => set({ importFiles, error: '', notice: '' }),
   sourceDataset: null,
   roles: { truth: '', prediction: '', features: [], id: '', time: '', task: 'classification' },
   setRoles: (roles) => set({ roles }),

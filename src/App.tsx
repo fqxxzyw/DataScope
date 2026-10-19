@@ -219,7 +219,7 @@ export default function App() {
               e.target.value = '';
             }}
           />
-          {r && (
+          {r && !s.importFiles && (
             <div className="dataset-strip">
               <FileText size={16} />
               <b>{r.name}</b>
@@ -242,11 +242,12 @@ export default function App() {
               {s.notice}
             </p>
           )}
-          {r?.warnings.map((w) => (
-            <p className="notice" key={w}>
-              {w}
-            </p>
-          ))}
+          {!s.importFiles &&
+            r?.warnings.map((w) => (
+              <p className="notice" key={w}>
+                {w}
+              </p>
+            ))}
           {s.importFiles ? (
             <ImportStudio key={s.importFiles.map((f) => f.name).join('|')} />
           ) : s.busy ? (

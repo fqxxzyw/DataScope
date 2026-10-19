@@ -16,6 +16,9 @@ test('preview first, associate a label file, then export fastText numeric labels
     ]);
   await expect(page.getByText('先看看，你的数据长什么样。')).toBeVisible();
   await expect(page.locator('.raw-table').first()).toContainText('第一条评论');
+  await page.getByLabel('首行规则').click();
+  await page.screenshot({ path: 'test-results/import-preview-menu.png' });
+  await page.keyboard.press('Escape');
   await page.getByLabel('文件组合方式').selectOption('rows');
   await page.getByRole('checkbox', { name: /我已确认两个文件/ }).check();
   await page.getByRole('button', { name: '确认数据，开始分析' }).click();
