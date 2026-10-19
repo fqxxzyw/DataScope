@@ -47,7 +47,7 @@ test('tab-separated TXT retains all columns and generated names', async ({ page 
       mimeType: 'text/plain',
       buffer: Buffer.from('一条文字\t1\tA\n另一条文字\t2\tB'),
     });
-  await expect(page.locator('.raw-table').first()).toContainText('Number');
+  await expect(page.getByLabel('第 2 列名称')).toHaveValue('Number');
   await page.getByRole('button', { name: '确认数据，开始分析' }).click();
   await expect(page.locator('.data-first th')).toHaveCount(4);
   const firstPanel = await page.locator('main .panel').first().getAttribute('class');
