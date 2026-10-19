@@ -3,9 +3,6 @@
   "version": "1.1.0",
   "description": "Privacy-first local dataset health and EDA workbench",
   "main": "electron/main.cjs",
-  "directories": {
-    "doc": "docs"
-  },
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 4173",
     "build": "tsc --noEmit && vite build",
@@ -67,15 +64,18 @@
       "target": [
         "nsis",
         "portable"
-      ],
-      "artifactName": "${productName}-${version}-${arch}-${target}.${ext}"
+      ]
     },
     "nsis": {
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "deleteAppDataOnUninstall": false
+      "deleteAppDataOnUninstall": false,
+      "artifactName": "${productName}-${version}-${arch}-nsis.${ext}"
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-${arch}-portable.${ext}"
     }
   }
 }
