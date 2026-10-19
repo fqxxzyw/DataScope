@@ -1,3 +1,5 @@
+import { HelpLibrary } from './components/HelpLibrary';
+import { HelpDemo } from './components/HelpDemo';
 import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import {
   Activity,
@@ -172,7 +174,7 @@ export default function App() {
             </div>
           </div>
           <div className="version">
-            DATASCOPE <span>V1.2</span>
+            DATASCOPE <span>V1.3</span>
           </div>
         </div>
       </aside>
@@ -208,6 +210,7 @@ export default function App() {
           </div>
         </header>
         <main>
+          <HelpLibrary />
           <input
             type="file"
             multiple
@@ -384,7 +387,9 @@ export default function App() {
         }}
       >
         <div className="section-heading">
-          <h2>{palette ? '前往…' : '导出分析成果'}</h2>
+          <h2>
+            {palette ? '前往…' : '导出分析成果'} {!palette && <HelpDemo kind="export" />}
+          </h2>
           <button
             aria-label="关闭对话框"
             onClick={() => {

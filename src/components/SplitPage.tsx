@@ -1,3 +1,4 @@
+import { HelpDemo } from './HelpDemo';
 import { useState } from 'react';
 import { useStore, request } from '../store';
 import type { SplitConfig, SplitResult } from '../engine/split';
@@ -42,11 +43,13 @@ export function SplitPage() {
     <>
       <section className="glass panel">
         <span className="eyebrow">REPRODUCIBLE BY DESIGN</span>
-        <h2>从一份数据，到可靠的评估。</h2>
+        <h2>
+          从一份数据，到可靠的评估。 <HelpDemo kind="split" />
+        </h2>
         <p>在原始数据上生成不重叠的行划分。固定种子、保存索引、比较子集质量，并检查潜在泄漏。</p>
         <div className="processing-grid" style={{ marginTop: 20 }}>
           <label>
-            划分方式
+            划分方式 <HelpDemo kind={config.method} />
             <select
               aria-label="划分方式"
               value={config.method}
@@ -100,7 +103,7 @@ export function SplitPage() {
             </label>
           ))}
           <label>
-            随机种子
+            随机种子 <HelpDemo kind="seed" />
             <input
               aria-label="随机种子"
               type="number"
@@ -122,7 +125,7 @@ export function SplitPage() {
             </select>
           </label>
           <label>
-            跨集实体 / 文本重叠审查
+            跨集实体 / 文本重叠审查 <HelpDemo kind="leakage" />
             <select
               aria-label="泄漏检查字段"
               value={config.leakageColumn}

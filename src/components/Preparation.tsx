@@ -1,3 +1,4 @@
+import { HelpDemo } from './HelpDemo';
 import { useState, useRef } from 'react';
 import { useStore, request } from '../store';
 import { operations, type PrepStep, type PrepOperation } from '../engine/prepare';
@@ -171,7 +172,9 @@ export function Preparation() {
     <>
       <section className="glass panel">
         <span className="eyebrow">LESS CODE. MORE CONTROL.</span>
-        <h2>把数据整理成你需要的样子。</h2>
+        <h2>
+          把数据整理成你需要的样子。 <HelpDemo kind="prepare" />
+        </h2>
         <p>
           组合步骤 → 预览影响 → 应用到工作副本 →
           继续分析或保存。原始数据仅在内存中保留，可恢复；最多撤销最近三次应用。
@@ -250,7 +253,7 @@ export function Preparation() {
           </button>
         </div>
         <div className="task-guidance">
-          <h3>快速开始：文本分类整理</h3>
+          <h3>快速开始：文本分类整理 <HelpDemo kind="recipe" /></h3>
           <p>
             先在工作台确认正文和标签。这个配方会去首尾空白、检查必需列空值并按正文与标签去重；先预览影响行数，再决定是否应用。
           </p>
@@ -281,7 +284,9 @@ export function Preparation() {
         {steps.map((s, i) => (
           <article className="prep-step" key={s.id}>
             <div className="section-heading">
-              <h3>步骤 {i + 1}</h3>
+              <h3>
+                步骤 {i + 1} <HelpDemo kind={s.operation} />
+              </h3>
               <div className="toolbar">
                 <button
                   aria-label={`上移步骤 ${i + 1}`}

@@ -19,6 +19,7 @@ function createWindow() {
     minWidth: 720,
     minHeight: 540,
     title: 'DataScope',
+    icon: path.join(__dirname, 'icon.png'),
     backgroundColor: '#e9edf5',
     autoHideMenuBar: true,
     webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true },
