@@ -88,10 +88,12 @@ export function HelpDemo({
   kind,
   title,
   detail,
+  demonstration,
 }: {
   kind: string;
   title?: string;
-  detail?: string;
+  detail?: React.ReactNode;
+  demonstration?: [string, string, string, string, string];
 }) {
   const id = useId();
   const pinned = useRef(false);
@@ -112,7 +114,7 @@ export function HelpDemo({
     const anchor = button.current.getBoundingClientRect();
     card.current.style.top = `${Math.max(12, Math.min(anchor.bottom + 8, window.innerHeight - height - 12))}px`;
   }, [open, position]);
-  const demo = demos[kind] || demos.prepare;
+  const demo = demonstration || demos[kind] || demos.prepare;
   const closeSoon = () => {
     if (pinned.current) return;
     timer.current = setTimeout(() => setOpen(false), 160);

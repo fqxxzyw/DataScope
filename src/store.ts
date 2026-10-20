@@ -11,6 +11,7 @@ import {
 import { normalizeSettings } from './engine/analyze';
 import { saveHistory } from './storage';
 export type Tab =
+  | 'ContextMap'
   | 'Overview'
   | 'Data'
   | 'Columns'

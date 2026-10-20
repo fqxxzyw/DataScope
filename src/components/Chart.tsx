@@ -29,7 +29,9 @@ export function Chart({
   option,
   label,
   height = 280,
+  onClick,
 }: {
+  onClick?: (params: { data?: unknown; name?: string }) => void;
   option: echarts.EChartsCoreOption;
   label: string;
   height?: number;
@@ -78,13 +80,14 @@ export function Chart({
       xAxis: constrainAxis(option.xAxis),
       yAxis: constrainAxis(option.yAxis),
     });
+    if (onClick) chart.on('click', onClick);
     const ro = new ResizeObserver(() => chart.resize());
     ro.observe(ref.current);
     return () => {
       ro.disconnect();
       chart.dispose();
     };
-  }, [option, theme]);
+  }, [option, theme, onClick]);
   return <div role="img" aria-label={label} ref={ref} style={{ height, width: '100%' }} />;
 }
 export function Bars({

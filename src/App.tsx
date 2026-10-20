@@ -1,4 +1,8 @@
-import { HelpLibrary } from './components/HelpLibrary';
+import { lazy, Suspense } from 'react';
+const ContextMap = lazy(() =>
+  import('./contextmap/ContextMap').then((m) => ({ default: m.ContextMap })),
+);
+import { droppedFiles, supportedDataFile } from './folder';
 import { HelpDemo } from './components/HelpDemo';
 import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import {
@@ -39,6 +43,7 @@ import { Processing } from './components/Processing';
 import { ImportStudio } from './components/ImportStudio';
 const nav: { id: Tab; label: string; icon: typeof Activity }[] = [
   { id: 'Overview', label: '分析工作台', icon: LayoutDashboard },
+  { id: 'ContextMap', label: '文本语义探索', icon: GitCompareArrows },
   { id: 'Prepare', label: '数据整理', icon: Settings2 },
   { id: 'Roles', label: '字段与训练配置', icon: Layers },
   { id: 'Processing', label: '格式与处理', icon: Sparkles },
@@ -64,6 +69,7 @@ function magnetic(e: PointerEvent<HTMLButtonElement>) {
 export default function App() {
   const s = useStore(),
     fileRef = useRef<HTMLInputElement>(null),
+    folderRef = useRef<HTMLInputElement>(null),
     dialogRef = useRef<HTMLDialogElement>(null);
   const [drag, setDrag] = useState(false),
     [history, setHistory] = useState<Report[]>([]),
@@ -112,6 +118,10 @@ export default function App() {
       s.setError('支持 CSV、TSV、TXT、JSON、JSONL、CoNLL 和 BIO。');
       return;
     }
+    if (files.length > 40 || files.reduce((n, f) => n + f.size, 0) > 100 * 1024 * 1024) {
+      s.setError('一次最多导入 40 个文件、合计 100 MB。');
+      return;
+    }
     s.setImportFiles(files);
   };
   const r = s.report;
@@ -141,6 +151,13 @@ export default function App() {
           <span>打开数据集</span>
           <kbd>⌘ O</kbd>
         </button>
+        <div className="folder-open-row">
+          <button className="open-folder" onClick={() => folderRef.current?.click()}>
+            <FolderOpen size={17} />
+            打开数据文件夹
+          </button>
+          <HelpDemo kind="folder" />
+        </div>
         <div className="nav-caption">WORKSPACE</div>
         <nav>
           {nav.map(({ id, label, icon: Icon }) => (
@@ -174,7 +191,7 @@ export default function App() {
             </div>
           </div>
           <div className="version">
-            DATASCOPE <span>V1.3</span>
+            DATASCOPE <span>V1.4</span>
           </div>
         </div>
       </aside>
@@ -210,7 +227,6 @@ export default function App() {
           </div>
         </header>
         <main>
-          <HelpLibrary />
           <input
             type="file"
             multiple
@@ -219,6 +235,22 @@ export default function App() {
             accept=".csv,.tsv,.txt,.json,.jsonl,.conll,.bio"
             onChange={(e) => {
               openFiles(Array.from(e.target.files || []));
+              e.target.value = '';
+            }}
+          />
+          <input
+            type="file"
+            hidden
+            multiple
+            aria-label="选择数据文件夹"
+            ref={(el) => {
+              folderRef.current = el;
+              el?.setAttribute('webkitdirectory', '');
+            }}
+            onChange={(e) => {
+              const files = Array.from(e.target.files || []).filter(supportedDataFile);
+              if (!files.length) s.setError('文件夹中没有受支持的数据文件。');
+              else openFiles(files);
               e.target.value = '';
             }}
           />
@@ -263,6 +295,10 @@ export default function App() {
               <p>{s.progress}% · 按阶段估计进度，不虚构已读取行数</p>
               <button onClick={s.cancel}>取消分析</button>
             </section>
+          ) : s.tab === 'ContextMap' ? (
+            <Suspense fallback={<p>正在打开文本语义探索…</p>}>
+              <ContextMap />
+            </Suspense>
           ) : !r ? (
             <>
               <div className="welcome">
@@ -287,10 +323,16 @@ export default function App() {
                   setDrag(true);
                 }}
                 onDragLeave={() => setDrag(false)}
-                onDrop={(e) => {
+                onDrop={async (e) => {
                   e.preventDefault();
                   setDrag(false);
-                  openFiles(Array.from(e.dataTransfer.files));
+                  const fallback = Array.from(e.dataTransfer.files);
+                  try {
+                    const files = await droppedFiles(e.dataTransfer.items);
+                    openFiles(files.length ? files : fallback);
+                  } catch (err) {
+                    s.setError(String(err));
+                  }
                 }}
               >
                 <button

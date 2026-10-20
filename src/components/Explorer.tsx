@@ -224,7 +224,7 @@ export function ChartStudio() {
       </div>
       <div className="chart-controls">
         <label>
-          图表
+          图表 <HelpDemo kind="chart" />
           <select
             aria-label="自选图表类型"
             value={config.chart}
@@ -241,7 +241,7 @@ export function ChartStudio() {
         </label>
         {(['x', 'y', 'group'] as const).map((key, i) => (
           <label key={key}>
-            {['X 字段', 'Y 数值字段', '分组字段'][i]}
+            {['X 字段', 'Y 数值字段', '分组字段'][i]} <HelpDemo kind="chart" />
             <select
               aria-label={['图表 X 字段', '图表 Y 字段', '图表分组字段'][i]}
               value={config[key]}
@@ -257,7 +257,7 @@ export function ChartStudio() {
           </label>
         ))}
         <label>
-          聚合
+          聚合 <HelpDemo kind="aggregate" />
           <select
             aria-label="图表聚合方式"
             value={config.aggregate}
@@ -269,7 +269,7 @@ export function ChartStudio() {
           </select>
         </label>
         <label>
-          类别上限
+          类别上限 <HelpDemo kind="chart" />
           <select
             aria-label="图表类别上限"
             value={config.limit}

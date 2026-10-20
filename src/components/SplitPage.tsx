@@ -76,7 +76,7 @@ export function SplitPage() {
           </label>
           {config.method !== 'random' && (
             <label>
-              划分依据字段
+              划分依据字段 <HelpDemo kind={config.method} />
               <select
                 aria-label="划分依据字段"
                 value={config.column}
@@ -91,7 +91,7 @@ export function SplitPage() {
           )}
           {(['train', 'validation', 'test'] as const).map((key, i) => (
             <label key={key}>
-              {['训练集 %', '验证集 %', '测试集 %'][i]}
+              {['训练集 %', '验证集 %', '测试集 %'][i]} <HelpDemo kind={config.method} />
               <input
                 aria-label={['训练集比例', '验证集比例', '测试集比例'][i]}
                 type="number"
@@ -112,7 +112,7 @@ export function SplitPage() {
             />
           </label>
           <label>
-            标签分布比较
+            标签分布比较 <HelpDemo kind="stratified" />
             <select
               aria-label="划分标签字段"
               value={config.label}

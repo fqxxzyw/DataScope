@@ -1,3 +1,5 @@
+import { FolderStudio } from './FolderStudio';
+import { inferFileRole } from '../engine/bundle';
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { HelpDemo } from './HelpDemo';
 import { FileText, Link2, Tags } from 'lucide-react';
@@ -9,6 +11,7 @@ const initial: Options = { header: 'auto', delimiter: 'auto', format: 'auto' };
 export function ImportStudio() {
   const { importFiles, setImportFiles, sourceDataset, load } = useStore();
   const files = importFiles || [];
+  const [bundleMode, setBundleMode] = useState(() => files.some((f) => !!f.webkitRelativePath));
   const [datasets, setDatasets] = useState<(Dataset | null)[]>([]);
   const [options, setOptions] = useState<Record<number, Options>>({});
   const [errors, setErrors] = useState<Record<number, string>>({});
@@ -26,7 +29,7 @@ export function ImportStudio() {
   useEffect(() => {
     setDatasets(files.map(() => null));
     setErrors({});
-    if (files.reduce((n, f) => n + f.size, 0) > 100 * 1024 * 1024) {
+    if (files.length > 40 || files.reduce((n, f) => n + f.size, 0) > 100 * 1024 * 1024) {
       setErrors({ 0: '本次导入总大小超过 100 MB，请分批导入。' });
       return;
     }
@@ -44,11 +47,20 @@ export function ImportStudio() {
         setErrors((old) => ({ ...old, [index]: '读取进程失败，请缩小文件后重试' }));
         worker.terminate();
       };
-      worker.postMessage({ file, ...(options[index] || initial) });
+      const role = inferFileRole(file.name);
+      const preset =
+        bundleMode && (role === 'classes' || role === 'stopwords')
+          ? { ...initial, header: false, format: 'text' }
+          : initial;
+      worker.postMessage({
+        file,
+        name: file.webkitRelativePath || file.name,
+        ...(options[index] || preset),
+      });
       return worker;
     });
     return () => workers.forEach((w) => w.terminate());
-  }, [importFiles, options]);
+  }, [importFiles, options, bundleMode]);
   const d = datasets[active];
   const left = includeCurrent ? sourceDataset : datasets[primary];
   const right = datasets[secondary];
@@ -92,7 +104,11 @@ export function ImportStudio() {
     includeCurrent,
     indexBase,
   ]);
-  const option = options[active] || initial;
+  const option =
+    options[active] ||
+    (bundleMode && ['classes', 'stopwords'].includes(inferFileRole(files[active]?.name || ''))
+      ? { ...initial, header: false, format: 'text' }
+      : initial);
   const patch = (value: Partial<Options>) =>
     setOptions((old) => ({ ...old, [active]: { ...option, ...value } }));
   const preview = (data: Dataset, editable = false) => (
@@ -159,6 +175,16 @@ export function ImportStudio() {
   );
   return (
     <div className="import-studio">
+      {files.length > 1 && (
+        <div className="toolbar">
+          <button className={bundleMode ? 'primary' : ''} onClick={() => setBundleMode(true)}>
+            按数据集文件夹处理
+          </button>
+          <HelpDemo kind="folder" />
+          <button onClick={() => setBundleMode(false)}>自定义单文件 / 两表关联</button>
+          <HelpDemo kind="key" />
+        </div>
+      )}
       <div className="page-intro">
         <div>
           <span className="eyebrow">01 / 导入与确认</span>
@@ -296,243 +322,257 @@ export function ImportStudio() {
           </>
         )}
       </section>
-      <section className="glass panel">
-        <h2>
-          <Link2 size={18} /> 这些文件要怎样一起使用？{' '}
-          <HelpDemo kind={mode === 'single' ? 'import' : mode} />
-        </h2>
-        <p>
-          分类数据可由“正文文件 + 标签文件”组成。标签字典也可以按编号关联。fastText
-          最终每行需要标签前缀与正文。
-        </p>
-        <div className="task-guidance">
-          <strong>你的文件如何分工？</strong>
+      {bundleMode ? (
+        <FolderStudio
+          key={files.map((f) => f.webkitRelativePath || f.name).join('|')}
+          files={files}
+          datasets={datasets}
+          onInspect={(i) => {
+            setActive(i);
+            document
+              .querySelector('.file-tabs')
+              ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }}
+        />
+      ) : (
+        <section className="glass panel">
+          <h2>
+            <Link2 size={18} /> 这些文件要怎样一起使用？{' '}
+            <HelpDemo kind={mode === 'single' ? 'import' : mode} />
+          </h2>
           <p>
-            train 是训练样本，dev 是验证样本，test 是测试样本；分别关联同一份 class
-            类别表。stopwords 是停用词表，不是标签，不应追加到样本中。数字标签也可直接导出
-            fastText；映射 class 后可改用可读的类别名称。
+            分类数据可由“正文文件 + 标签文件”组成。标签字典也可以按编号关联。fastText
+            最终每行需要标签前缀与正文。
           </p>
-          {files.some((f) => /^class\.txt$/i.test(f.name)) && (
-            <button
-              onClick={() => {
-                const ci = files.findIndex((f) => /^class\.txt$/i.test(f.name));
-                const ti = files.findIndex((f) => /^(train|dev|test)\.txt$/i.test(f.name));
-                setSecondary(ci);
-                setMode('classes');
-                setConfirmOrder(false);
-                setIndexBase(0);
-                if (ti >= 0) {
-                  setIncludeCurrent(false);
-                  setPrimary(ti);
-                  setLeftKey(datasets[ti]?.headers[1] || '');
-                } else if (left) setLeftKey(left.headers[1] || '');
-              }}
-            >
-              配置样本 + class 类别列表
-            </button>
-          )}
-        </div>
-        {sourceDataset && (
-          <label className="check">
-            <input
-              type="checkbox"
-              checked={includeCurrent}
-              onChange={(e) => {
-                setIncludeCurrent(e.target.checked);
-                setSecondary(0);
-              }}
-            />
-            使用当前导入的原始数据作为主表（不包含后续整理操作）
-          </label>
-        )}
-        <div className="chart-controls">
-          <label>
-            导入方式
-            <select
-              aria-label="文件组合方式"
-              value={mode}
-              onChange={(e) => {
-                setMode(e.target.value as typeof mode);
-                setConfirmOrder(false);
-              }}
-            >
-              <option value="single">只分析选中的主文件</option>
-              <option value="append">相同字段：追加所有文件的行</option>
-              <option value="rows">正文 + 标签：按行一一对应</option>
-              <option value="classes">类别列表 class.txt：按类别编号映射（推荐）</option>
-              <option value="key">主表 + 标签字典：按键匹配</option>
-            </select>
-          </label>
-          {!includeCurrent && (
-            <label>
-              主数据文件
-              <select
-                aria-label="主数据文件"
-                value={primary}
-                onChange={(e) => {
-                  setPrimary(+e.target.value);
-                  setLeftKey('');
-                  setConfirmOrder(false);
-                }}
-              >
-                {files.map((f, i) => (
-                  <option value={i} key={i}>
-                    {f.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-          {['rows', 'key', 'classes'].includes(mode) && (
-            <label>
-              标签 / 字典文件
-              <select
-                aria-label="关联文件"
-                value={secondary}
-                onChange={(e) => {
-                  setSecondary(+e.target.value);
-                  setRightKey('');
-                  setConfirmOrder(false);
-                }}
-              >
-                {files.map((f, i) => (
-                  <option key={i} value={i}>
-                    {f.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-          {mode === 'classes' && (
-            <>
-              <label>
-                样本中的类别编号列
-                <select
-                  aria-label="类别编号列"
-                  value={leftKey}
-                  onChange={(e) => {
-                    setLeftKey(e.target.value);
-                    setConfirmOrder(false);
-                  }}
-                >
-                  <option value="">选择编号列</option>
-                  {left?.headers.map((h) => (
-                    <option key={h} value={h}>
-                      {left.name} · {h}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                class 首行对应哪个编号？
-                <select
-                  aria-label="类别编号起点"
-                  value={indexBase}
-                  onChange={(e) => {
-                    setIndexBase(Number(e.target.value) as 0 | 1);
-                    setConfirmOrder(false);
-                  }}
-                >
-                  <option value={0}>0（0 → 第一类，1 → 第二类）</option>
-                  <option value={1}>1（1 → 第一类，2 → 第二类）</option>
-                </select>
-              </label>
-            </>
-          )}
-          {mode === 'key' && (
-            <>
-              <label>
-                主表匹配列
-                <select
-                  aria-label="主表匹配列"
-                  value={leftKey}
-                  onChange={(e) => setLeftKey(e.target.value)}
-                >
-                  <option value="">选择编号或关联键</option>
-                  {left?.headers.map((h) => (
-                    <option key={h} value={h}>
-                      {left?.name} · {h}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                字典匹配列
-                <select
-                  aria-label="字典匹配列"
-                  value={rightKey}
-                  onChange={(e) => setRightKey(e.target.value)}
-                >
-                  <option value="">选择对应编号</option>
-                  {right?.headers.map((h) => (
-                    <option key={h} value={h}>
-                      {right?.name} · {h}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </>
-          )}
-        </div>
-        {mode === 'classes' && (
-          <div className="class-map-guide">
-            <h3>
-              <Tags size={18} /> 类别列表映射 <HelpDemo kind="classes" />
-            </h3>
+          <div className="task-guidance">
+            <strong>你的文件如何分工？</strong>
             <p>
-              不是让第 1 条样本对应第 1
-              个类别，而是用每条样本的编号查类别表。类别列表必须保持训练数据所用的顺序。
+              train 是训练样本，dev 是验证样本，test 是测试样本；分别关联同一份 class
+              类别表。stopwords 是停用词表，不是标签，不应追加到样本中。数字标签也可直接导出
+              fastText；映射 class 后可改用可读的类别名称。
             </p>
-            <div className="class-chips">
-              {right?.rows.slice(0, 12).map((row, i) => (
-                <span key={i}>
-                  {i + indexBase} → {row[0]}
-                </span>
-              ))}
+            {files.some((f) => /^class\.txt$/i.test(f.name)) && (
+              <button
+                onClick={() => {
+                  const ci = files.findIndex((f) => /^class\.txt$/i.test(f.name));
+                  const ti = files.findIndex((f) => /^(train|dev|test)\.txt$/i.test(f.name));
+                  setSecondary(ci);
+                  setMode('classes');
+                  setConfirmOrder(false);
+                  setIndexBase(0);
+                  if (ti >= 0) {
+                    setIncludeCurrent(false);
+                    setPrimary(ti);
+                    setLeftKey(datasets[ti]?.headers[1] || '');
+                  } else if (left) setLeftKey(left.headers[1] || '');
+                }}
+              >
+                配置样本 + class 类别列表
+              </button>
+            )}
+          </div>
+          {sourceDataset && (
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={includeCurrent}
+                onChange={(e) => {
+                  setIncludeCurrent(e.target.checked);
+                  setSecondary(0);
+                }}
+              />
+              使用当前导入的原始数据作为主表（不包含后续整理操作）
+            </label>
+          )}
+          <div className="chart-controls">
+            <label>
+              导入方式 <HelpDemo kind="classes" />
+              <select
+                aria-label="文件组合方式"
+                value={mode}
+                onChange={(e) => {
+                  setMode(e.target.value as typeof mode);
+                  setConfirmOrder(false);
+                }}
+              >
+                <option value="single">只分析选中的主文件</option>
+                <option value="append">相同字段：追加所有文件的行</option>
+                <option value="rows">正文 + 标签：按行一一对应</option>
+                <option value="classes">类别列表 class.txt：按类别编号映射（推荐）</option>
+                <option value="key">主表 + 标签字典：按键匹配</option>
+              </select>
+            </label>
+            {!includeCurrent && (
+              <label>
+                主数据文件 <HelpDemo kind="folder" />
+                <select
+                  aria-label="主数据文件"
+                  value={primary}
+                  onChange={(e) => {
+                    setPrimary(+e.target.value);
+                    setLeftKey('');
+                    setConfirmOrder(false);
+                  }}
+                >
+                  {files.map((f, i) => (
+                    <option value={i} key={i}>
+                      {f.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            {['rows', 'key', 'classes'].includes(mode) && (
+              <label>
+                标签 / 字典文件 <HelpDemo kind="classes" />
+                <select
+                  aria-label="关联文件"
+                  value={secondary}
+                  onChange={(e) => {
+                    setSecondary(+e.target.value);
+                    setRightKey('');
+                    setConfirmOrder(false);
+                  }}
+                >
+                  {files.map((f, i) => (
+                    <option key={i} value={i}>
+                      {f.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            {mode === 'classes' && (
+              <>
+                <label>
+                  样本中的类别编号列 <HelpDemo kind="classes" />
+                  <select
+                    aria-label="类别编号列"
+                    value={leftKey}
+                    onChange={(e) => {
+                      setLeftKey(e.target.value);
+                      setConfirmOrder(false);
+                    }}
+                  >
+                    <option value="">选择编号列</option>
+                    {left?.headers.map((h) => (
+                      <option key={h} value={h}>
+                        {left.name} · {h}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  class 首行对应哪个编号？ <HelpDemo kind="classes" />
+                  <select
+                    aria-label="类别编号起点"
+                    value={indexBase}
+                    onChange={(e) => {
+                      setIndexBase(Number(e.target.value) as 0 | 1);
+                      setConfirmOrder(false);
+                    }}
+                  >
+                    <option value={0}>0（0 → 第一类，1 → 第二类）</option>
+                    <option value={1}>1（1 → 第一类，2 → 第二类）</option>
+                  </select>
+                </label>
+              </>
+            )}
+            {mode === 'key' && (
+              <>
+                <label>
+                  主表匹配列 <HelpDemo kind="key" />
+                  <select
+                    aria-label="主表匹配列"
+                    value={leftKey}
+                    onChange={(e) => setLeftKey(e.target.value)}
+                  >
+                    <option value="">选择编号或关联键</option>
+                    {left?.headers.map((h) => (
+                      <option key={h} value={h}>
+                        {left?.name} · {h}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  字典匹配列 <HelpDemo kind="key" />
+                  <select
+                    aria-label="字典匹配列"
+                    value={rightKey}
+                    onChange={(e) => setRightKey(e.target.value)}
+                  >
+                    <option value="">选择对应编号</option>
+                    {right?.headers.map((h) => (
+                      <option key={h} value={h}>
+                        {right?.name} · {h}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </>
+            )}
+          </div>
+          {mode === 'classes' && (
+            <div className="class-map-guide">
+              <h3>
+                <Tags size={18} /> 类别列表映射 <HelpDemo kind="classes" />
+              </h3>
+              <p>
+                不是让第 1 条样本对应第 1
+                个类别，而是用每条样本的编号查类别表。类别列表必须保持训练数据所用的顺序。
+              </p>
+              <div className="class-chips">
+                {right?.rows.slice(0, 12).map((row, i) => (
+                  <span key={i}>
+                    {i + indexBase} → {row[0]}
+                  </span>
+                ))}
+              </div>
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={confirmOrder}
+                  onChange={(e) => setConfirmOrder(e.target.checked)}
+                />
+                我已核对类别顺序与编号起点，按此映射
+              </label>
             </div>
+          )}
+          {mode === 'rows' && (
             <label className="check">
               <input
                 type="checkbox"
                 checked={confirmOrder}
                 onChange={(e) => setConfirmOrder(e.target.checked)}
               />
-              我已核对类别顺序与编号起点，按此映射
+              我已确认两个文件每一行对应同一个样本；程序只校验行数，不能判断语义对应。
             </label>
+          )}
+          {combined.error && (
+            <p className="notice" role="status">
+              {combined.error}
+            </p>
+          )}
+          {combined.dataset && mode !== 'single' && (
+            <>
+              <h3>组合后的预览 · 尚未应用</h3>
+              {preview(combined.dataset)}
+              <p className="notice">{combined.dataset.warnings.at(-1)}</p>
+            </>
+          )}
+          <div className="toolbar">
+            <button
+              className="primary"
+              disabled={!combined.dataset || Object.keys(errors).length > 0}
+              onClick={() => combined.dataset && load(combined.dataset, 'auto', true, 'table')}
+            >
+              确认数据，开始分析
+            </button>
+            <span className="footnote">只创建工作副本，不覆盖原文件。下一步首先展示数据表。</span>
           </div>
-        )}
-        {mode === 'rows' && (
-          <label className="check">
-            <input
-              type="checkbox"
-              checked={confirmOrder}
-              onChange={(e) => setConfirmOrder(e.target.checked)}
-            />
-            我已确认两个文件每一行对应同一个样本；程序只校验行数，不能判断语义对应。
-          </label>
-        )}
-        {combined.error && (
-          <p className="notice" role="status">
-            {combined.error}
-          </p>
-        )}
-        {combined.dataset && mode !== 'single' && (
-          <>
-            <h3>组合后的预览 · 尚未应用</h3>
-            {preview(combined.dataset)}
-            <p className="notice">{combined.dataset.warnings.at(-1)}</p>
-          </>
-        )}
-        <div className="toolbar">
-          <button
-            className="primary"
-            disabled={!combined.dataset || Object.keys(errors).length > 0}
-            onClick={() => combined.dataset && load(combined.dataset, 'auto', true, 'table')}
-          >
-            确认数据，开始分析
-          </button>
-          <span className="footnote">只创建工作副本，不覆盖原文件。下一步首先展示数据表。</span>
-        </div>
-      </section>
+        </section>
+      )}
     </div>
   );
 }

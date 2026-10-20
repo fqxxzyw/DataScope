@@ -221,15 +221,6 @@ export function Processing() {
         )}
       </section>
       <section className="glass panel">
-        <h3>各输出格式的示例</h3>
-        <div className="class-chips">
-          {Object.entries(profiles).map(([key, p]) => (
-            <span key={key}>
-              {p.title}
-              <HelpDemo kind={`profile-${key}`} />
-            </span>
-          ))}
-        </div>
         <h2>
           格式与任务支持矩阵 <HelpDemo kind="processing" />
         </h2>

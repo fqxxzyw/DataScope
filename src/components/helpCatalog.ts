@@ -267,6 +267,27 @@ export const profileDemos: Record<Profile, Demo> = {
   ],
 };
 export const extraDemos: Record<string, Demo> = {
+  folder: [
+    '文件夹中的文件用途',
+    'train / dev / test：各自的正文和编号',
+    'class：类别名称；stop_word：停用词',
+    '各样本集分别使用同一份配置',
+    '按名称建议用途，支持 class、classes、clasee 和 stop_word 等写法。请逐个核对，未知文件默认不参与；文件不会自动混合。',
+  ],
+  stopwords: [
+    '按词去停用词',
+    '分词后的正文：我 / 的 / 学校',
+    'stop_word.txt：的',
+    '保留：我 学校',
+    '只有显式启用才处理。按完整词匹配，不在原文中做子串删除；字符模式仅匹配单字。处理后正文为空会停止导出。',
+  ],
+  'bundle-export': [
+    '分别输出训练、验证、测试',
+    'train、dev、test 三组独立样本',
+    '统一类别映射与分词选项',
+    'ZIP：三份 fastText + 处理清单',
+    '先查看每份样本数和输出预览，再下载。仅输出已指定的样本集，class 和 stopwords 不会成为样本行。',
+  ],
   collapseWhitespace: prepDemos.collapse,
   dropEmpty: prepDemos.drop_missing,
   tokenize: [

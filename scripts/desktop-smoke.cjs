@@ -64,6 +64,54 @@ fs.mkdirSync('test-results', { recursive: true });
           state: 'completed',
         });
       expect(JSON.parse(fs.readFileSync(destination, 'utf8')).name).toBe('desktop-test.csv');
+      await page.getByRole('button', { name: '文本语义探索', exact: true }).click();
+      await page.getByRole('button', { name: '酒店评论', exact: true }).click();
+      await expect(page.locator('.cm-stats')).toContainText('6 documents', { timeout: 30000 });
+      await page
+        .getByRole('navigation', { name: 'ContextMap 视图' })
+        .getByRole('button', { name: 'Similarity', exact: true })
+        .click();
+      await page.getByRole('button', { name: '生成 Similarity Matrix' }).click();
+      await expect(page.getByRole('img', { name: 'Similarity Matrix' })).toBeVisible();
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1),
+      ).toBe(true);
+      await page.screenshot({ path: `test-results/contextmap-desktop-${scale}.png` });
+      if (scale === 1) {
+        const folder = path.resolve('test-results/input-dataset');
+        fs.mkdirSync(folder, { recursive: true });
+        for (const [name, content] of Object.entries({
+          'train.txt': '学校新闻\t1\n经济新闻\t0',
+          'dev.txt': '验证新闻\t1',
+          'test.txt': '测试新闻\t0',
+          'clasee.txt': 'finance\neducation',
+          'stop_word.txt': '的\n了',
+        }))
+          fs.writeFileSync(path.join(folder, name), content);
+        await page.getByLabel('选择数据文件夹', { exact: true }).setInputFiles(folder);
+        await expect(page.getByLabel('train.txt 标签列', { exact: true })).toHaveValue('Number');
+        await page
+          .getByRole('checkbox', {
+            name: '我已核对文件用途、字段、类别顺序与处理选项',
+            exact: true,
+          })
+          .check();
+        await page.getByRole('button', { name: '预览三份数据的处理结果', exact: true }).click();
+        await expect(page.locator('.bundle-results')).toContainText('__label__education 学校新闻');
+        const zipPath = path.resolve('test-results/desktop-bundle.zip');
+        await app.evaluate(({ session }, savePath) => {
+          globalThis.bundleDownload = null;
+          session.defaultSession.once('will-download', (_event, item) => {
+            item.setSavePath(savePath);
+            item.once('done', (_event, state) => {
+              globalThis.bundleDownload = state;
+            });
+          });
+        }, zipPath);
+        await page.getByRole('button', { name: '下载数据集 ZIP', exact: true }).click();
+        await expect.poll(() => app.evaluate(() => globalThis.bundleDownload)).toBe('completed');
+        expect(fs.readFileSync(zipPath).readUInt32LE(0)).toBe(0x04034b50);
+      }
       expect(errors).toEqual([]);
     } finally {
       await app.close();
