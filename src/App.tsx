@@ -1,3 +1,4 @@
+import { Annotation } from './annotation/Annotation';
 import { lazy, Suspense } from 'react';
 const ContextMap = lazy(() =>
   import('./contextmap/ContextMap').then((m) => ({ default: m.ContextMap })),
@@ -43,6 +44,7 @@ import { Processing } from './components/Processing';
 import { ImportStudio } from './components/ImportStudio';
 const nav: { id: Tab; label: string; icon: typeof Activity }[] = [
   { id: 'Overview', label: '分析工作台', icon: LayoutDashboard },
+  { id: 'Annotation', label: '数据标注', icon: FileText },
   { id: 'ContextMap', label: '文本语义探索', icon: GitCompareArrows },
   { id: 'Prepare', label: '数据整理', icon: Settings2 },
   { id: 'Roles', label: '字段与训练配置', icon: Layers },
@@ -295,6 +297,8 @@ export default function App() {
               <p>{s.progress}% · 按阶段估计进度，不虚构已读取行数</p>
               <button onClick={s.cancel}>取消分析</button>
             </section>
+          ) : s.tab === 'Annotation' ? (
+            <Annotation />
           ) : s.tab === 'ContextMap' ? (
             <Suspense fallback={<p>正在打开文本语义探索…</p>}>
               <ContextMap />
