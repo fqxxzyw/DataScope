@@ -114,12 +114,49 @@ export function HelpDemo({
     const anchor = button.current.getBoundingClientRect();
     card.current.style.top = `${Math.max(12, Math.min(anchor.bottom + 8, window.innerHeight - height - 12))}px`;
   }, [open, position]);
+  useEffect(() => {
+    if (!open) return;
+    const dismiss = () => {
+      if (timer.current) clearTimeout(timer.current);
+      pinned.current = false;
+      setOpen(false);
+    };
+    const key = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') dismiss();
+    };
+    const outside = (event: PointerEvent) => {
+      if (
+        event.target instanceof Node &&
+        !card.current?.contains(event.target) &&
+        !button.current?.contains(event.target)
+      )
+        dismiss();
+    };
+    const parentDialog = button.current?.closest('dialog');
+    // A portal must not outlive the native dialog that owns its trigger.
+    const observer = new MutationObserver(() => {
+      if (parentDialog && !parentDialog.open) dismiss();
+    });
+    if (parentDialog)
+      observer.observe(parentDialog, { attributes: true, attributeFilter: ['open'] });
+    parentDialog?.addEventListener('close', dismiss);
+    document.addEventListener('keydown', key, true);
+    document.addEventListener('pointerdown', outside, true);
+    return () => {
+      observer.disconnect();
+      parentDialog?.removeEventListener('close', dismiss);
+      document.removeEventListener('keydown', key, true);
+      document.removeEventListener('pointerdown', outside, true);
+    };
+  }, [open]);
   const demo = demonstration || demos[kind] || demos.prepare;
   const closeSoon = () => {
     if (pinned.current) return;
     timer.current = setTimeout(() => setOpen(false), 160);
   };
   const show = () => {
+    const parentDialog = button.current?.closest('dialog');
+    if (parentDialog && !parentDialog.open) return;
     if (timer.current) clearTimeout(timer.current);
     const r = button.current?.getBoundingClientRect();
     if (r)
