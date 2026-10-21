@@ -2309,3 +2309,26 @@ label:not(.check):has(> .help-anchor) > input {
 .bundle-results {
   margin-top: 20px;
 }
+
+/* The compact sidebar keeps import and its local help reachable without wrapping text. */
+.collapsed .folder-open-row {
+  flex-direction: column;
+}
+.collapsed .open-folder {
+  width: 100%;
+  flex: none;
+}
+@media (max-width: 900px) {
+  .folder-open-row {
+    flex-direction: column;
+  }
+  .open-folder {
+    width: 100%;
+    flex: none;
+  }
+}
+@media (max-width: 600px) {
+  .sidebar .folder-open-row {
+    display: none;
+  }
+}

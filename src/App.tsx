@@ -154,9 +154,14 @@ export default function App() {
           <kbd>⌘ O</kbd>
         </button>
         <div className="folder-open-row">
-          <button className="open-folder" onClick={() => folderRef.current?.click()}>
+          <button
+            className="open-folder"
+            title="打开数据文件夹"
+            aria-label="打开数据文件夹"
+            onClick={() => folderRef.current?.click()}
+          >
             <FolderOpen size={17} />
-            打开数据文件夹
+            <span>打开数据文件夹</span>
           </button>
           <HelpDemo kind="folder" />
         </div>

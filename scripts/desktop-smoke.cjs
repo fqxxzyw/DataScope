@@ -16,6 +16,15 @@ fs.mkdirSync('test-results', { recursive: true });
       page.on('pageerror', (e) => errors.push(e.message));
       await page.getByTitle('分析工作台', { exact: true }).click();
       await expect(page.getByText('将数据集拖到这里')).toBeVisible();
+      expect(
+        await page.locator('.sidebar').evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
+      ).toBe(true);
+      if (await page.evaluate(() => innerWidth <= 900 && innerWidth > 600)) {
+        await expect(page.locator('.open-folder > span')).toBeHidden();
+        await expect(
+          page.getByRole('button', { name: '打开数据文件夹', exact: true }),
+        ).toBeVisible();
+      }
       await page
         .locator('input[type=file]')
         .first()
