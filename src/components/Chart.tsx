@@ -104,7 +104,7 @@ export function Bars({
   const cat = {
       type: 'category',
       data: items.map((x) => x[0]),
-      axisLabel: { color: 'inherit', overflow: 'truncate', width: 90 },
+      axisLabel: { overflow: 'truncate', width: 90 },
     },
     value = {
       type: 'value',
