@@ -107,7 +107,5 @@ test('class list maps IDs to names and explains the workflow without modifying s
   await page.getByRole('button', { name: '去除首尾空白：查看动画帮助' }).hover();
   await expect(page.getByRole('dialog', { name: '去除首尾空白' })).toContainText('hello world');
   await page.getByRole('button', { name: '关闭动画帮助' }).click();
-  await page.getByText('操作图解 · 查看每一步如何改变数据', { exact: true }).click();
-  await page.getByLabel('搜索操作图解', { exact: true }).fill('One-hot');
-  await expect(page.locator('.help-library-grid')).toContainText('One-hot');
+  await expect(page.locator('.help-library')).toHaveCount(0);
 });

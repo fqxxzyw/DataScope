@@ -2256,3 +2256,79 @@ label:not(.check):has(> .help-anchor) > input {
   vertical-align: middle;
   margin-right: 5px;
 }
+.folder-open-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 8px 0 16px;
+}
+.open-folder {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  font-size: 12px;
+}
+.folder-file {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  margin: 12px 0;
+}
+.folder-file strong {
+  overflow-wrap: anywhere;
+  min-width: 0;
+  font-size: 13px;
+}
+.folder-file .chart-controls {
+  margin: 12px 0;
+}
+.folder-rules {
+  padding: 18px;
+  border-radius: 16px;
+  background: var(--subtle);
+  margin-top: 18px;
+  display: grid;
+  gap: 14px;
+}
+.folder-rules > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.folder-rules > label {
+  max-width: 540px;
+}
+.folder-studio .toolbar > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.bundle-results {
+  margin-top: 20px;
+}
+
+/* The compact sidebar keeps import and its local help reachable without wrapping text. */
+.collapsed .folder-open-row {
+  flex-direction: column;
+}
+.collapsed .open-folder {
+  width: 100%;
+  flex: none;
+}
+@media (max-width: 900px) {
+  .folder-open-row {
+    flex-direction: column;
+  }
+  .open-folder {
+    width: 100%;
+    flex: none;
+  }
+}
+@media (max-width: 600px) {
+  .sidebar .folder-open-row {
+    display: none;
+  }
+}

@@ -183,9 +183,11 @@ export function Preparation() {
           <button onClick={() => save('csv')} disabled={!hasRaw || busy}>
             保存当前数据 CSV
           </button>
+          <HelpDemo kind="export" />
           <button onClick={() => save('jsonl')} disabled={!hasRaw || busy}>
             保存当前数据 JSONL
           </button>
+          <HelpDemo kind="export" />
           <button
             disabled={!hasRaw || !roles.features.length || busy}
             onClick={() => save('csv', [...roles.features, ...(roles.truth ? [roles.truth] : [])])}
@@ -195,9 +197,11 @@ export function Preparation() {
           <button disabled={!hasRaw || busy} onClick={() => restore(false)}>
             撤销上次应用
           </button>
+          <HelpDemo kind="restore" />
           <button disabled={!hasRaw || busy} onClick={() => restore(true)}>
             恢复原始数据
           </button>
+          <HelpDemo kind="restore" />
         </div>
         <div className="notice">
           当前 {r.rowCount.toLocaleString()} 行 · {r.columns.length} 列。应用后会重新执行
@@ -229,6 +233,7 @@ export function Preparation() {
           <button onClick={() => recipeInput.current?.click()} disabled={busy}>
             载入操作配方
           </button>
+          <HelpDemo kind="recipe" />
           <input
             ref={recipeInput}
             hidden
@@ -251,9 +256,12 @@ export function Preparation() {
           >
             保存操作配方
           </button>
+          <HelpDemo kind="recipe" />
         </div>
         <div className="task-guidance">
-          <h3>快速开始：文本分类整理 <HelpDemo kind="recipe" /></h3>
+          <h3>
+            快速开始：文本分类整理 <HelpDemo kind="recipe" />
+          </h3>
           <p>
             先在工作台确认正文和标签。这个配方会去首尾空白、检查必需列空值并按正文与标签去重；先预览影响行数，再决定是否应用。
           </p>
@@ -284,9 +292,7 @@ export function Preparation() {
         {steps.map((s, i) => (
           <article className="prep-step" key={s.id}>
             <div className="section-heading">
-              <h3>
-                步骤 {i + 1} <HelpDemo kind={s.operation} />
-              </h3>
+              <h3>步骤 {i + 1}</h3>
               <div className="toolbar">
                 <button
                   aria-label={`上移步骤 ${i + 1}`}
@@ -313,7 +319,7 @@ export function Preparation() {
             </div>
             <div className="chart-controls">
               <label>
-                操作
+                操作 <HelpDemo kind={s.operation} />
                 <select
                   aria-label={`步骤 ${i + 1} 操作`}
                   disabled={busy}
@@ -332,7 +338,7 @@ export function Preparation() {
               </label>
               {!['select', 'deduplicate', 'drop_missing', 'sample'].includes(s.operation) && (
                 <label>
-                  目标列
+                  目标列 <HelpDemo kind={s.operation} />
                   <select
                     aria-label={`步骤 ${i + 1} 字段`}
                     disabled={busy}
@@ -347,7 +353,7 @@ export function Preparation() {
               )}
               {methods[s.operation] && (
                 <label>
-                  方式
+                  方式 <HelpDemo kind={s.operation} />
                   <select
                     aria-label={`步骤 ${i + 1} 方式`}
                     disabled={busy}
@@ -398,7 +404,7 @@ export function Preparation() {
               )}
               {['arithmetic', 'aggregate'].includes(s.operation) && (
                 <label>
-                  数值列 B
+                  数值列 B <HelpDemo kind={s.operation} />
                   <select
                     aria-label={`步骤 ${i + 1} 第二列`}
                     disabled={busy}
@@ -462,9 +468,11 @@ export function Preparation() {
           >
             {busy ? '正在计算…' : '预览整理结果'}
           </button>
+          <HelpDemo kind="prepare" />
           <button disabled={!result || applied || busy || !steps.length} onClick={() => run(true)}>
             确认预览，应用到工作副本
           </button>
+          <HelpDemo kind="prepare" />
         </div>
       </section>
       {result && (

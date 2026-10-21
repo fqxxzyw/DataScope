@@ -11,6 +11,8 @@ import {
 import { normalizeSettings } from './engine/analyze';
 import { saveHistory } from './storage';
 export type Tab =
+  | 'Annotation'
+  | 'ContextMap'
   | 'Overview'
   | 'Data'
   | 'Columns'
@@ -129,6 +131,8 @@ function persist() {
   }
 }
 const tabs: Tab[] = [
+  'Annotation',
+  'ContextMap',
   'Overview',
   'Data',
   'Columns',

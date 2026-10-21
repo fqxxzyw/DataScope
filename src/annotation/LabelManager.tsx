@@ -1,0 +1,176 @@
+import { useEffect, useRef, useState } from 'react';
+import { validateLabels } from './core';
+import type { Label, Workspace } from './types';
+export function LabelManager({
+  w,
+  save,
+  close,
+  busy,
+}: {
+  w: Workspace;
+  save: (labels: Label[], deleted?: { id: string; target: string }) => Promise<void>;
+  close: () => void;
+  busy: boolean;
+}) {
+  const [labels, setLabels] = useState(w.project.labels.map((l) => ({ ...l }))),
+    [error, setError] = useState(''),
+    [remove, setRemove] = useState(''),
+    [target, setTarget] = useState(''),
+    [drag, setDrag] = useState(''),
+    dialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    dialog.current?.showModal();
+  }, []);
+  useEffect(() => setLabels(w.project.labels.map((l) => ({ ...l }))), [w.project.labels]);
+  const update = (id: string, patch: Partial<Label>) =>
+    setLabels(labels.map((l) => (l.id === id ? { ...l, ...patch } : l)));
+  const reorder = (id: string, to: number) => {
+    const list = [...labels],
+      from = list.findIndex((l) => l.id === id);
+    if (from < 0 || to < 0 || to >= list.length) return;
+    const [label] = list.splice(from, 1);
+    list.splice(to, 0, label);
+    setLabels(list);
+  };
+  const persist = async (items: Label[], deleted?: { id: string; target: string }) => {
+    try {
+      validateLabels(items);
+      setError('');
+      await save(items, deleted);
+      setRemove('');
+    } catch (e) {
+      setError(String(e));
+    }
+  };
+  const count = Object.values(w.annotations).filter((a) => a.labels.includes(remove)).length;
+  return (
+    <dialog ref={dialog} className="ann-dialog" onCancel={close}>
+      <div className="annotation">
+        <header>
+          <h2>标签管理</h2>
+          <button onClick={close}>关闭标签管理</button>
+        </header>
+        <p>
+          拖动排序或使用上下按钮。前 9
+          个新标签自动分配空闲数字快捷键，名称修改不会改变已有标注的标签 ID。
+        </p>
+        <fieldset disabled={busy}>
+          {labels.map((l, i) => (
+            <section
+              key={l.id}
+              draggable
+              onDragStart={() => setDrag(l.id)}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                reorder(drag, i);
+              }}
+              className="ann-label-edit"
+            >
+              <label>
+                名称
+                <input
+                  aria-label={`标签名称 ${i + 1}`}
+                  value={l.name}
+                  onChange={(e) => update(l.id, { name: e.target.value })}
+                />
+              </label>
+              <label>
+                颜色
+                <input
+                  type="color"
+                  value={l.color}
+                  onChange={(e) => update(l.id, { color: e.target.value })}
+                />
+              </label>
+              <label>
+                快捷键
+                <input
+                  aria-label={`标签快捷键 ${i + 1}`}
+                  maxLength={1}
+                  value={l.shortcut}
+                  onChange={(e) => update(l.id, { shortcut: e.target.value })}
+                />
+              </label>
+              <label>
+                描述
+                <input
+                  value={l.description}
+                  onChange={(e) => update(l.id, { description: e.target.value })}
+                />
+              </label>
+              <button onClick={() => reorder(l.id, i - 1)}>上移</button>
+              <button onClick={() => reorder(l.id, i + 1)}>下移</button>
+              <button
+                aria-label={`删除标签 ${l.name}`}
+                onClick={() => {
+                  setRemove(l.id);
+                  setTarget('');
+                }}
+              >
+                删除
+              </button>
+            </section>
+          ))}
+          <button
+            onClick={() =>
+              setLabels([
+                ...labels,
+                {
+                  id: crypto.randomUUID(),
+                  name: '',
+                  color: '#5b8def',
+                  shortcut:
+                    ['1', '2', '3', '4', '5', '6', '7', '8', '9'].find(
+                      (k) => !labels.some((l) => l.shortcut === k),
+                    ) || '',
+                  description: '',
+                },
+              ])
+            }
+          >
+            新增标签
+          </button>
+          <button onClick={() => void persist(labels)}>保存标签设置</button>
+          {remove && (
+            <section className="ann-notice">
+              <p>
+                标签「{labels.find((l) => l.id === remove)?.name}」被 {count}{' '}
+                条标注使用。请选择处理方式：
+              </p>
+              <label>
+                重新映射 / 取消标注
+                <select
+                  aria-label="删除标签处理方式"
+                  value={target}
+                  onChange={(e) => setTarget(e.target.value)}
+                >
+                  <option value="">取消这些标注，转为未标注</option>
+                  {labels
+                    .filter((l) => l.id !== remove)
+                    .map((l) => (
+                      <option key={l.id} value={l.id}>
+                        映射到 {l.name}
+                      </option>
+                    ))}
+                </select>
+              </label>
+              <button
+                onClick={() =>
+                  void persist(
+                    labels.filter((l) => l.id !== remove),
+                    { id: remove, target },
+                  )
+                }
+              >
+                确认删除标签
+              </button>
+              <button onClick={() => setRemove('')}>取消删除</button>
+            </section>
+          )}
+        </fieldset>
+        {error && <p role="alert">{error}</p>}
+      </div>
+    </dialog>
+  );
+}

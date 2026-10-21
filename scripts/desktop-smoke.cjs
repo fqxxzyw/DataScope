@@ -14,7 +14,17 @@ fs.mkdirSync('test-results', { recursive: true });
       const page = await app.firstWindow();
       const errors = [];
       page.on('pageerror', (e) => errors.push(e.message));
+      await page.getByTitle('分析工作台', { exact: true }).click();
       await expect(page.getByText('将数据集拖到这里')).toBeVisible();
+      expect(
+        await page.locator('.sidebar').evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
+      ).toBe(true);
+      if (await page.evaluate(() => innerWidth <= 900 && innerWidth > 600)) {
+        await expect(page.locator('.open-folder > span')).toBeHidden();
+        await expect(
+          page.getByRole('button', { name: '打开数据文件夹', exact: true }),
+        ).toBeVisible();
+      }
       await page
         .locator('input[type=file]')
         .first()
@@ -64,6 +74,88 @@ fs.mkdirSync('test-results', { recursive: true });
           state: 'completed',
         });
       expect(JSON.parse(fs.readFileSync(destination, 'utf8')).name).toBe('desktop-test.csv');
+      await page.getByRole('button', { name: '另存结果：查看动画帮助', exact: true }).focus();
+      await page.keyboard.press('Escape');
+      await expect(page.locator('.help-demo')).toHaveCount(0);
+      await page.getByRole('button', { name: '文本语义探索', exact: true }).click();
+      await page.getByRole('button', { name: '酒店评论', exact: true }).click();
+      await expect(page.locator('.cm-stats')).toContainText('6 documents', { timeout: 30000 });
+      await page
+        .getByRole('navigation', { name: 'ContextMap 视图' })
+        .getByRole('button', { name: 'Similarity', exact: true })
+        .click();
+      await page.getByRole('button', { name: '生成 Similarity Matrix' }).click();
+      await expect(page.getByRole('img', { name: 'Similarity Matrix' })).toBeVisible();
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1),
+      ).toBe(true);
+      await page.screenshot({ path: `test-results/contextmap-desktop-${scale}.png` });
+      if (scale === 1) {
+        await page.getByRole('button', { name: '数据标注', exact: true }).click();
+        const newProject = page.getByRole('button', { name: '新建标注项目', exact: true });
+        if (await newProject.count()) await newProject.click();
+        await page.getByLabel('标注文件', { exact: true }).setInputFiles({
+          name: 'desktop-annotation.json',
+          mimeType: 'application/json',
+          buffer: Buffer.from(
+            JSON.stringify([
+              { id: '1', title: '本地标注测试' },
+              { id: '2', title: '第二篇文章' },
+            ]),
+          ),
+        });
+        await page.getByRole('button', { name: '扫描所选数据', exact: true }).click();
+        await expect(page.getByRole('heading', { name: /扫描完成/ })).toBeVisible();
+        await page.getByRole('checkbox', { name: '已核对数据、字段和本地保存方式' }).check();
+        await page.getByRole('button', { name: '创建项目并开始标注' }).click();
+        await page.getByRole('button', { name: '标签管理', exact: true }).click();
+        await page.getByRole('button', { name: '新增标签', exact: true }).click();
+        await page.getByLabel('标签名称 1', { exact: true }).fill('测试分类');
+        await page.getByRole('button', { name: '保存标签设置' }).click();
+        await expect(page.locator('.ann-label-button')).toHaveCount(1);
+        await page.getByRole('button', { name: '关闭标签管理' }).click();
+        await page.locator('.ann-label-button').click();
+        await expect(page.locator('.ann-header')).toContainText('1 / 2');
+        await page.reload();
+        await page.getByRole('button', { name: '继续标注', exact: true }).first().click();
+        await expect(page.locator('.ann-header')).toContainText('1 / 2');
+        await expect(page.locator('.ann-record h2')).toHaveText('第二篇文章');
+        await page.screenshot({ path: 'test-results/annotation-desktop.png' });
+
+        const folder = path.resolve('test-results/input-dataset');
+        fs.mkdirSync(folder, { recursive: true });
+        for (const [name, content] of Object.entries({
+          'train.txt': '学校新闻\t1\n经济新闻\t0',
+          'dev.txt': '验证新闻\t1',
+          'test.txt': '测试新闻\t0',
+          'clasee.txt': 'finance\neducation',
+          'stop_word.txt': '的\n了',
+        }))
+          fs.writeFileSync(path.join(folder, name), content);
+        await page.getByLabel('选择数据文件夹', { exact: true }).setInputFiles(folder);
+        await expect(page.getByLabel('train.txt 标签列', { exact: true })).toHaveValue('Number');
+        await page
+          .getByRole('checkbox', {
+            name: '我已核对文件用途、字段、类别顺序与处理选项',
+            exact: true,
+          })
+          .check();
+        await page.getByRole('button', { name: '预览三份数据的处理结果', exact: true }).click();
+        await expect(page.locator('.bundle-results')).toContainText('__label__education 学校新闻');
+        const zipPath = path.resolve('test-results/desktop-bundle.zip');
+        await app.evaluate(({ session }, savePath) => {
+          globalThis.bundleDownload = null;
+          session.defaultSession.once('will-download', (_event, item) => {
+            item.setSavePath(savePath);
+            item.once('done', (_event, state) => {
+              globalThis.bundleDownload = state;
+            });
+          });
+        }, zipPath);
+        await page.getByRole('button', { name: '下载数据集 ZIP', exact: true }).click();
+        await expect.poll(() => app.evaluate(() => globalThis.bundleDownload)).toBe('completed');
+        expect(fs.readFileSync(zipPath).readUInt32LE(0)).toBe(0x04034b50);
+      }
       expect(errors).toEqual([]);
     } finally {
       await app.close();

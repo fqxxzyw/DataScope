@@ -1,0 +1,125 @@
+import { useState } from 'react';
+import { download } from '../components/AnalysisPages';
+import { useStore } from '../store';
+import { makeZip } from '../engine/zip';
+import { backup, exportFiles, trainingDataset } from './export';
+import { Help } from '../contextmap/Help';
+import type { Workspace } from './types';
+export function ExportPanel({ w }: { w: Workspace }) {
+  const [template, setTemplate] = useState(`[${w.project.mainField}]`),
+    [format, setFormat] = useState('jsonl'),
+    [include, setInclude] = useState(false),
+    [error, setError] = useState('');
+  return (
+    <section className="ann-export">
+      <h2>Export Dataset</h2>
+      <p>仅导出当前数据源中已标注的记录；未标注与跳过的记录不会进入训练集。所有导出均为新文件。</p>
+      <div className="ann-controls">
+        <button onClick={() => setTemplate(`[${w.project.mainField}]`)}>仅主字段</button>
+        <button
+          onClick={() =>
+            setTemplate(
+              [w.project.mainField, ...w.project.auxiliary].map((f) => `[${f}]`).join('\n'),
+            )
+          }
+        >
+          主字段 + 辅助字段
+        </button>
+        <Help
+          title="导出字段组合"
+          steps={['[title] + [content]', '替换为原始字段值', 'text / label']}
+        >
+          按模板组合正文；不改变原数据。JSON 原始记录导出保留原字段，其他训练格式使用这里的模板。
+        </Help>
+      </div>
+      <label>
+        正文模板
+        <textarea
+          aria-label="正文模板"
+          rows={3}
+          value={template}
+          onChange={(e) => setTemplate(e.target.value)}
+        />
+      </label>
+      <div className="ann-controls">
+        <label>
+          导出格式
+          <select
+            aria-label="标注导出格式"
+            value={format}
+            onChange={(e) => setFormat(e.target.value)}
+          >
+            <option value="jsonl">JSONL</option>
+            <option value="json">原始 JSON + label</option>
+            <option value="csv">CSV</option>
+            <option value="fasttext">fastText</option>
+            <option value="bert">BERT TSV · 分层 80/10/10</option>
+          </select>
+        </label>
+        <button
+          onClick={() => {
+            try {
+              const files = exportFiles(w, template, format),
+                zip = makeZip(files),
+                url = URL.createObjectURL(
+                  new Blob([zip.buffer as ArrayBuffer], { type: 'application/zip' }),
+                ),
+                a = document.createElement('a');
+              a.href = url;
+              a.download = 'datascope-annotated-dataset.zip';
+              a.click();
+              setTimeout(() => URL.revokeObjectURL(url), 60000);
+              setError('');
+            } catch (e) {
+              setError(String(e));
+            }
+          }}
+        >
+          下载标注数据 ZIP
+        </button>
+        <button
+          onClick={() => {
+            try {
+              const d = trainingDataset(w, template);
+              useStore.getState().load(d, ',', true);
+              useStore
+                .getState()
+                .setRoles({
+                  text: 'text',
+                  truth: 'label',
+                  prediction: '',
+                  features: [],
+                  id: 'id',
+                  time: '',
+                  task: 'classification',
+                });
+              useStore.getState().setTab('Split');
+            } catch (e) {
+              setError(String(e));
+            }
+          }}
+        >
+          进入 DataScope 数据集划分
+        </button>
+      </div>
+      <p>
+        BERT ZIP 含 train.tsv / dev.tsv / test.tsv / class.txt，数值标签按当前标签顺序从 0
+        编号；小类别可能无法在三个子集均出现，详情记录在 split-info.json。
+      </p>
+      <h3>项目备份</h3>
+      <label>
+        <input type="checkbox" checked={include} onChange={(e) => setInclude(e.target.checked)} />
+        备份包含源数据（便于离线迁移，可能含私人内容）
+      </label>
+      <button
+        onClick={() =>
+          download(backup(w, include), 'datascope-annotation-project.json', 'application/json')
+        }
+      >
+        下载标注项目备份
+      </button>
+      <p>默认只保存标签、标注和项目设置。恢复后若无源数据，需要重新选择同 ID 的数据源。</p>
+      {error && <p role="alert">{error}</p>}
+    </section>
+  );
+}

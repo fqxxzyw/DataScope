@@ -29,7 +29,9 @@ export function Chart({
   option,
   label,
   height = 280,
+  onClick,
 }: {
+  onClick?: (params: { data?: unknown; name?: string }) => void;
   option: echarts.EChartsCoreOption;
   label: string;
   height?: number;
@@ -59,7 +61,7 @@ export function Chart({
       color: ['#657fe8', '#8eaae8', '#b1a2dc'],
       textStyle: { fontFamily: 'Inter, system-ui' },
       animation: !matchMedia('(prefers-reduced-motion: reduce)').matches,
-      aria: { enabled: true },
+      aria: { enabled: true, label: { description: label } },
       ...option,
       grid: {
         top: 28,
@@ -78,13 +80,14 @@ export function Chart({
       xAxis: constrainAxis(option.xAxis),
       yAxis: constrainAxis(option.yAxis),
     });
+    if (onClick) chart.on('click', onClick);
     const ro = new ResizeObserver(() => chart.resize());
     ro.observe(ref.current);
     return () => {
       ro.disconnect();
       chart.dispose();
     };
-  }, [option, theme]);
+  }, [option, theme, onClick, label]);
   return <div role="img" aria-label={label} ref={ref} style={{ height, width: '100%' }} />;
 }
 export function Bars({
@@ -101,7 +104,7 @@ export function Bars({
   const cat = {
       type: 'category',
       data: items.map((x) => x[0]),
-      axisLabel: { color: 'inherit', overflow: 'truncate', width: 90 },
+      axisLabel: { overflow: 'truncate', width: 90 },
     },
     value = {
       type: 'value',
