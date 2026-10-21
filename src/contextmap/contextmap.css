@@ -321,3 +321,5 @@
     padding: 12px;
   }
 }
+
+.contextmap .cm-tabs { flex-direction: row; justify-content: flex-start; }

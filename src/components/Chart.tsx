@@ -61,7 +61,7 @@ export function Chart({
       color: ['#657fe8', '#8eaae8', '#b1a2dc'],
       textStyle: { fontFamily: 'Inter, system-ui' },
       animation: !matchMedia('(prefers-reduced-motion: reduce)').matches,
-      aria: { enabled: true },
+      aria: { enabled: true, label: { description: label } },
       ...option,
       grid: {
         top: 28,
@@ -87,7 +87,7 @@ export function Chart({
       ro.disconnect();
       chart.dispose();
     };
-  }, [option, theme, onClick]);
+  }, [option, theme, onClick, label]);
   return <div role="img" aria-label={label} ref={ref} style={{ height, width: '100%' }} />;
 }
 export function Bars({

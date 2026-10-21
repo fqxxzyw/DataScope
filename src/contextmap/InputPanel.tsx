@@ -159,7 +159,7 @@ export function InputPanel({ onLoad }: { onLoad: (docs: TextDocument[], name: st
           <div className="cm-controls">
             <label>
               Text Column
-              <select value={tc} onChange={(e) => setTc(+e.target.value)}>
+              <select aria-label="Text Column" value={tc} onChange={(e) => setTc(+e.target.value)}>
                 {parsed.headers.map((h, i) => (
                   <option key={i} value={i}>
                     {parsed.name} · {h}
@@ -172,7 +172,7 @@ export function InputPanel({ onLoad }: { onLoad: (docs: TextDocument[], name: st
             </Help>
             <label>
               Label Column
-              <select value={lc} onChange={(e) => setLc(+e.target.value)}>
+              <select aria-label="Label Column" value={lc} onChange={(e) => setLc(+e.target.value)}>
                 <option value={-1}>不使用标签</option>
                 {parsed.headers.map((h, i) => (
                   <option key={i} value={i}>

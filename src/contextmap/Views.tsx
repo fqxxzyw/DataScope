@@ -86,7 +86,7 @@ function Top() {
   return (
     <label>
       Top Words
-      <select value={settings.top} onChange={(e) => setSettings({ top: +e.target.value })}>
+      <select aria-label="Top Words" value={settings.top} onChange={(e) => setSettings({ top: +e.target.value })}>
         {[20, 50, 100].map((n) => (
           <option key={n}>{n}</option>
         ))}
@@ -260,7 +260,7 @@ export function NGram({ a }: { a: Analysis }) {
         <label>
           N-Gram
           <select
-            value={a.settings.n}
+            aria-label="N-Gram" value={a.settings.n}
             onChange={(e) => {
               setPosition(0);
               setSettings({ n: +e.target.value as 1 | 2 | 3 });
@@ -449,7 +449,7 @@ export function Cooccurrence({
         <label>
           Co-occurrence Window
           <select
-            value={a.settings.window}
+            aria-label="Co-occurrence Window" value={a.settings.window}
             onChange={(e) => setSettings({ window: +e.target.value })}
           >
             {[2, 3, 5, 10].map((n) => (

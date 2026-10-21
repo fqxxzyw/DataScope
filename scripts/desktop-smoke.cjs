@@ -64,6 +64,7 @@ fs.mkdirSync('test-results', { recursive: true });
           state: 'completed',
         });
       expect(JSON.parse(fs.readFileSync(destination, 'utf8')).name).toBe('desktop-test.csv');
+      await page.keyboard.press('Escape');
       await page.getByRole('button', { name: '文本语义探索', exact: true }).click();
       await page.getByRole('button', { name: '酒店评论', exact: true }).click();
       await expect(page.locator('.cm-stats')).toContainText('6 documents', { timeout: 30000 });
