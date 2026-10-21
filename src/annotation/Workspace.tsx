@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Bars } from '../components/Chart';
 import { Help } from '../contextmap/Help';
 import { annotationFor, display, filteredRows, progress, randomReview } from './core';
@@ -20,6 +20,8 @@ export function WorkspaceView({ c }: { c: Controller }) {
     [sample, setSample] = useState(10),
     [confirmClear, setConfirmClear] = useState(false),
     [copyStatus, setCopyStatus] = useState('');
+  const [autoNext, setAutoNext] = useState(p.autoNext);
+  useEffect(() => setAutoNext(p.autoNext), [p.autoNext, c.error]);
   const counts = useMemo(() => progress(w.rows, w.annotations), [w.rows, w.annotations]);
   const filtered = useMemo(() => filteredRows(w, p.filter), [w, p.filter]),
     visible = review ? filtered.filter((r) => review.includes(r.id)) : filtered;
@@ -361,8 +363,11 @@ export function WorkspaceView({ c }: { c: Controller }) {
                 <label>
                   <input
                     type="checkbox"
-                    checked={p.autoNext}
-                    onChange={(e) => void c.edit({ autoNext: e.target.checked })}
+                    checked={autoNext}
+                    onChange={(e) => {
+                      setAutoNext(e.target.checked);
+                      void c.edit({ autoNext: e.target.checked });
+                    }}
                   />
                   标注后自动下一条
                 </label>

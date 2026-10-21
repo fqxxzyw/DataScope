@@ -14,6 +14,7 @@ fs.mkdirSync('test-results', { recursive: true });
       const page = await app.firstWindow();
       const errors = [];
       page.on('pageerror', (e) => errors.push(e.message));
+      await page.getByTitle('分析工作台', { exact: true }).click();
       await expect(page.getByText('将数据集拖到这里')).toBeVisible();
       await page
         .locator('input[type=file]')
@@ -79,6 +80,37 @@ fs.mkdirSync('test-results', { recursive: true });
       ).toBe(true);
       await page.screenshot({ path: `test-results/contextmap-desktop-${scale}.png` });
       if (scale === 1) {
+        await page.getByRole('button', { name: '数据标注', exact: true }).click();
+        const newProject = page.getByRole('button', { name: '新建标注项目', exact: true });
+        if (await newProject.count()) await newProject.click();
+        await page.getByLabel('标注文件', { exact: true }).setInputFiles({
+          name: 'desktop-annotation.json',
+          mimeType: 'application/json',
+          buffer: Buffer.from(
+            JSON.stringify([
+              { id: '1', title: '本地标注测试' },
+              { id: '2', title: '第二篇文章' },
+            ]),
+          ),
+        });
+        await page.getByRole('button', { name: '扫描所选数据', exact: true }).click();
+        await expect(page.getByRole('heading', { name: /扫描完成/ })).toBeVisible();
+        await page.getByRole('checkbox', { name: '已核对数据、字段和本地保存方式' }).check();
+        await page.getByRole('button', { name: '创建项目并开始标注' }).click();
+        await page.getByRole('button', { name: '标签管理', exact: true }).click();
+        await page.getByRole('button', { name: '新增标签', exact: true }).click();
+        await page.getByLabel('标签名称 1', { exact: true }).fill('测试分类');
+        await page.getByRole('button', { name: '保存标签设置' }).click();
+        await expect(page.locator('.ann-label-button')).toHaveCount(1);
+        await page.getByRole('button', { name: '关闭标签管理' }).click();
+        await page.locator('.ann-label-button').click();
+        await expect(page.locator('.ann-header')).toContainText('1 / 2');
+        await page.reload();
+        await page.getByRole('button', { name: '继续标注', exact: true }).first().click();
+        await expect(page.locator('.ann-header')).toContainText('1 / 2');
+        await expect(page.locator('.ann-record h2')).toHaveText('第二篇文章');
+        await page.screenshot({ path: 'test-results/annotation-desktop.png' });
+
         const folder = path.resolve('test-results/input-dataset');
         fs.mkdirSync(folder, { recursive: true });
         for (const [name, content] of Object.entries({
