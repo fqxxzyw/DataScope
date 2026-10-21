@@ -1,5 +1,22 @@
 # 验证记录
 
+## v1.4 · 2026-10-21
+
+验证提交：`af4db8c95700d6a29e199b840f10d47971095804`。
+[Windows 完整验证记录](https://github.com/fqxxzyw/DataScope/actions/runs/39553203601)。
+
+- npm ci、Lint、TypeScript strict 与 Vite build：通过。
+- Vitest：7 个文件、98 项测试通过。
+- Playwright Chromium：11 项界面测试通过，包含原有导入/布局、文件夹类别与停用词、ContextMap 全流程、标注保存/撤销/刷新恢复/导出/按 ID 更新数据。
+- 实际构建 Windows 安装版与便携版 EXE，通过 100%、125%、150%、200% 缩放检查，验证原有页面、ContextMap Worker / 相似度矩阵和原生下载。
+- EXE 标注项目创建、标签管理、保存后刷新继续，以及文件夹映射与 ZIP 下载：通过。
+- 实测页面未发现横向溢出或 JavaScript 未捕获错误；这不等于所有屏幕和全部输入组合已穷举。
+- 已检查真实截图，修复深色图表文字对比度；截图见 `docs/contextmap/`。
+
+尚未覆盖：所有 22 种整理操作的完整组合、跨浏览器/移动端、100000 条标注和极限文件大小性能。
+
+以下保留早期版本验收记录。
+
 ## 已实际执行
 
 - `npm install`：完成。
