@@ -34,7 +34,7 @@ test('ContextMap is an integrated local NLP workspace', async ({ page }) => {
   await expect(page.locator('.cm-view')).toContainText('酒店');
   await page.getByLabel('Show Stop Words', { exact: true }).check();
   await tab('Frequency');
-  await page.getByLabel('Top Words', { exact: true }).selectOption('50');
+  await page.getByRole('combobox', { name: 'Top Words', exact: true }).selectOption('50');
   await expect(page.locator('.cm-stats')).toContainText('6 documents');
   await page
     .locator('.cm-chips button')
@@ -87,13 +87,11 @@ test('ContextMap is an integrated local NLP workspace', async ({ page }) => {
   expect(data.source).toBeUndefined();
   expect(data.documents).toBe(6);
   await page.getByRole('button', { name: '打开 / 粘贴文本', exact: true }).click();
-  await page
-    .getByLabel('ContextMap 文件', { exact: true })
-    .setInputFiles({
-      name: 'labels.csv',
-      mimeType: 'text/csv',
-      buffer: Buffer.from('text,label\n"clean hotel",positive\n"dirty room",negative'),
-    });
+  await page.getByLabel('ContextMap 文件', { exact: true }).setInputFiles({
+    name: 'labels.csv',
+    mimeType: 'text/csv',
+    buffer: Buffer.from('text,label\n"clean hotel",positive\n"dirty room",negative'),
+  });
   await expect(page.getByRole('heading', { name: '原始数据 · labels.csv' })).toBeVisible();
   await page.getByLabel('Label Column', { exact: true }).selectOption('1');
   await page.getByRole('button', { name: '使用所选字段分析' }).click();

@@ -1,23 +1,405 @@
-import {useEffect,useRef,useState} from 'react';
-import {useStore} from '../store';
-import {Help} from '../contextmap/Help';
-import {display,identify,sourceChanges,titleStats} from './core';
-import {limits,type Row,type Scan,type ScanMessage,type Workspace} from './types';
-export function ImportProject({onCreate,onReplace,existing}:{onCreate:(w:Workspace)=>Promise<void>;onReplace?:(rows:Row[])=>Promise<void>;existing?:Workspace}){
- const current=useStore(s=>s.sourceDataset),[files,setFiles]=useState<File[]>([]),[pattern,setPattern]=useState('raw.json'),[header,setHeader]=useState<boolean|'auto'>('auto'),[scan,setScan]=useState<Scan|null>(null),[busy,setBusy]=useState(''),[error,setError]=useState(''),[main,setMain]=useState(existing?.project.mainField||''),[idField,setIdField]=useState(existing?.project.idField||''),[aux,setAux]=useState<string[]>(existing?.project.auxiliary||[]),[name,setName]=useState('新标注项目'),[review,setReview]=useState(false),[prepared,setPrepared]=useState<Row[]|null>(null);
- const input=useRef<HTMLInputElement>(null),folder=useRef<HTMLInputElement>(null),worker=useRef<Worker|null>(null);
- useEffect(()=>()=>worker.current?.terminate(),[]);
- const accept=(value:Scan)=>{setScan(value);setMain(existing?.project.mainField||(['title','text','content'].find(f=>value.fields.includes(f))||value.fields[0]));setIdField(existing?.project.idField||(['post_id','id','ID'].find(f=>value.fields.includes(f))||''));setAux(existing?.project.auxiliary||value.fields.filter(f=>['content','author','publish_time'].includes(f)));setPrepared(null);setReview(false);};
- const selected=files.filter(f=>/\.(jsonl?|csv|tsv|txt)$/i.test(f.name)&&(!pattern||f.name===pattern));
- const scanFiles=()=>{worker.current?.terminate();setBusy('扫描中…');setError('');setScan(null);const w=new Worker(new URL('./scan.worker.ts',import.meta.url),{type:'module'});worker.current=w;w.onmessage=(e:MessageEvent<ScanMessage>)=>{if(e.data.type==='progress')setBusy(`已解析 ${e.data.count} / ${e.data.total} 个文件`);if(e.data.type==='result'){accept(e.data.scan);setBusy('');w.terminate();}if(e.data.type==='error'){setError(e.data.message);setBusy('');w.terminate();}};w.onerror=()=>{setError('文件扫描失败');setBusy('');w.terminate();};w.postMessage({files:selected,header});};
- const stats=scan?titleStats(scan.rows,main):null;
- return <section className="ann-import"><h2>{existing?'更新数据源 / 恢复源数据':'创建标注项目'}</h2><p>创建项目会在设备 IndexedDB 中保存一份数据工作副本，用于关闭后继续标注。不会修改原始文件，不上传服务器。</p><div className="ann-controls"><button onClick={()=>input.current?.click()}>导入标注文件</button><button onClick={()=>folder.current?.click()}>导入标注文件夹</button><Help title="目录扫描" steps={['目录 / raw.json + processed.json','按文件名筛选一种','预览字段与 ID']}>只读取所选名称，避免同一帖子读两次。显示的目录路径用于区分来源，不修改文件。</Help><input ref={input} aria-label="标注文件" type="file" multiple hidden accept=".json,.jsonl,.csv,.tsv,.txt" onChange={e=>{setFiles(Array.from(e.target.files||[]));setPattern('');setScan(null);e.target.value='';}}/><input ref={el=>{folder.current=el;el?.setAttribute('webkitdirectory','');}} aria-label="标注文件夹" type="file" multiple hidden onChange={e=>{setFiles(Array.from(e.target.files||[]));setPattern('raw.json');setScan(null);e.target.value='';}}/>{current&&<button onClick={()=>accept({rows:current.rows.map(r=>({source:current.name,data:Object.fromEntries(current.headers.map((h,i)=>[h,r[i]]))})),fields:current.headers,files:1,warnings:[]})}>使用 DataScope 当前导入数据</button>}</div>
- {files.length>0&&<><p>发现 {files.length} 个文件 · 支持 {files.filter(f=>/\.(jsonl?|csv|tsv|txt)$/i.test(f.name)).length} 个 · 选中 {selected.length} 个</p><div className="ann-controls"><label>仅读取文件名<input aria-label="仅读取文件名" placeholder="留空读取所有支持文件" value={pattern} onChange={e=>{setPattern(e.target.value);setScan(null);}}/></label><button onClick={()=>{setPattern('raw.json');setScan(null);}}>只读 raw.json</button><button onClick={()=>{setPattern('processed.json');setScan(null);}}>只读 processed.json</button><label>表头<select value={String(header)} onChange={e=>{setHeader(e.target.value==='auto'?'auto':e.target.value==='true');setScan(null);}}><option value="auto">自动判断</option><option value="true">第一行是标题</option><option value="false">没有标题</option></select></label><button disabled={!selected.length||!!busy} onClick={scanFiles}>扫描所选数据</button></div><details><summary>目录结构（前 200 个路径）</summary><pre>{files.slice(0,200).map(f=>f.webkitRelativePath||f.name).join('\n')}</pre></details></>}
- {busy&&<p role="status">{busy} <button onClick={()=>{worker.current?.terminate();setBusy('');}}>取消扫描</button></p>}{error&&<p role="alert">{error}</p>}
- {scan&&<><h3>扫描完成 · {scan.files} 文件 / {scan.rows.length} 条 / {scan.fields.length} 字段</h3><div className="ann-table"><table><thead><tr><th>来源</th>{scan.fields.slice(0,10).map(f=><th key={f}>{f}</th>)}</tr></thead><tbody>{scan.rows.slice(0,5).map((r,i)=><tr key={i}><td>{r.source}</td>{scan.fields.slice(0,10).map(f=><td key={f}>{display(r.data[f]).slice(0,300)}</td>)}</tr>)}</tbody></table></div><div className="ann-controls">{!existing&&<label>项目名称<input aria-label="项目名称" value={name} onChange={e=>setName(e.target.value)}/></label>}<label>主显示字段<select aria-label="主显示字段" value={main} onChange={e=>setMain(e.target.value)}>{scan.fields.map(f=><option key={f}>{f}</option>)}</select></label><label>唯一 ID 字段<select aria-label="唯一 ID 字段" value={idField} disabled={!!existing} onChange={e=>{setIdField(e.target.value);setPrepared(null);}}><option value="">内容 SHA-256（自动生成）</option>{scan.fields.map(f=><option key={f}>{f}</option>)}</select></label><Help title="唯一 ID" steps={['post_id = 123','标注绑定 123','顺序变化仍对应']}>重复或空 ID 会阻止创建。没有 ID 时使用内容 SHA-256；内容变化会产生新 ID，完全相同的记录会报告重复。</Help></div><div className="ann-controls">辅助显示字段：{scan.fields.filter(f=>f!==main).map(f=><label key={f}><input type="checkbox" checked={aux.includes(f)} onChange={e=>setAux(e.target.checked?[...aux,f]:aux.filter(x=>x!==f))}/>{f}</label>)}</div>
- {stats&&<details open><summary>标题 / 主字段质量统计</summary><p>总数 {stats.total} · 空值 {stats.empty} · 重复 {stats.duplicates} · 唯一 {stats.unique} · 平均长度 {stats.average.toFixed(1)}</p><p>最长：{stats.longest.slice(0,300)}</p><p>最短：{stats.shortest.slice(0,300)}</p></details>}
- <label><input type="checkbox" checked={review} onChange={e=>setReview(e.target.checked)}/>已核对数据、字段和本地保存方式</label><button disabled={!review||!!busy||!main||!name.trim()} onClick={async()=>{setError('');setBusy('校验唯一 ID…');try{if(scan.rows.length>limits.rows)throw new Error('最多 100,000 条记录');const rows=await identify(scan.rows,idField);if(existing){setPrepared(rows);}else{const at=new Date().toISOString(),id=crypto.randomUUID();await onCreate({project:{id,name:name.trim(),source:files[0]?.webkitRelativePath||files[0]?.name||'DataScope 当前数据',createdAt:at,updatedAt:at,mode:'single',mainField:main,auxiliary:aux,idField,fields:scan.fields,labels:[],currentId:rows[0]?.id||'',filter:{status:'all',label:'',search:''},autoNext:true,revision:0,total:rows.length,labeled:0,skipped:0},rows,annotations:{},history:[],session:{id:crypto.randomUUID(),projectId:id,start:at,end:at,count:0}});}}catch(e){setError(String(e));}finally{setBusy('');}}}>{existing?'对比数据源变化':'创建项目并开始标注'}</button>
- {existing&&prepared&&<section className="ann-notice"><p>{(()=>{const d=sourceChanges(existing.rows,prepared);return `已有 ${d.existing} · 新增 ${d.added} · 缺失 ${d.missing} · 内容改变 ${d.changed.length}`;})()}</p><p>同 ID 且内容未变的标注保留。内容改变的记录转为未标注，旧值保留在历史。缺失记录的标注保留在项目备份中，不参与当前数据导出。</p><button onClick={()=>void onReplace?.(prepared)}>确认更新当前数据源</button><button onClick={()=>setPrepared(null)}>取消更新</button></section>}
- </>}
- </section>;
+import { useEffect, useRef, useState } from 'react';
+import { useStore } from '../store';
+import { Help } from '../contextmap/Help';
+import { display, identify, sourceChanges, titleStats } from './core';
+import { limits, type Row, type Scan, type ScanMessage, type Workspace } from './types';
+export function ImportProject({
+  onCreate,
+  onReplace,
+  existing,
+}: {
+  onCreate: (w: Workspace) => Promise<void>;
+  onReplace?: (rows: Row[]) => Promise<void>;
+  existing?: Workspace;
+}) {
+  const current = useStore((s) => s.sourceDataset),
+    [files, setFiles] = useState<File[]>([]),
+    [pattern, setPattern] = useState('raw.json'),
+    [header, setHeader] = useState<boolean | 'auto'>('auto'),
+    [scan, setScan] = useState<Scan | null>(null),
+    [busy, setBusy] = useState(''),
+    [error, setError] = useState(''),
+    [main, setMain] = useState(existing?.project.mainField || ''),
+    [idField, setIdField] = useState(existing?.project.idField || ''),
+    [aux, setAux] = useState<string[]>(existing?.project.auxiliary || []),
+    [name, setName] = useState('新标注项目'),
+    [review, setReview] = useState(false),
+    [prepared, setPrepared] = useState<Row[] | null>(null);
+  const input = useRef<HTMLInputElement>(null),
+    folder = useRef<HTMLInputElement>(null),
+    worker = useRef<Worker | null>(null);
+  useEffect(() => () => worker.current?.terminate(), []);
+  const accept = (value: Scan) => {
+    setScan(value);
+    setMain(
+      existing?.project.mainField ||
+        ['title', 'text', 'content'].find((f) => value.fields.includes(f)) ||
+        value.fields[0],
+    );
+    setIdField(
+      existing?.project.idField ||
+        ['post_id', 'id', 'ID'].find((f) => value.fields.includes(f)) ||
+        '',
+    );
+    setAux(
+      existing?.project.auxiliary ||
+        value.fields.filter((f) => ['content', 'author', 'publish_time'].includes(f)),
+    );
+    setPrepared(null);
+    setReview(false);
+  };
+  const selected = files.filter(
+    (f) => /\.(jsonl?|csv|tsv|txt)$/i.test(f.name) && (!pattern || f.name === pattern),
+  );
+  const scanFiles = () => {
+    worker.current?.terminate();
+    setBusy('扫描中…');
+    setError('');
+    setScan(null);
+    const w = new Worker(new URL('./scan.worker.ts', import.meta.url), { type: 'module' });
+    worker.current = w;
+    w.onmessage = (e: MessageEvent<ScanMessage>) => {
+      if (e.data.type === 'progress') setBusy(`已解析 ${e.data.count} / ${e.data.total} 个文件`);
+      if (e.data.type === 'result') {
+        accept(e.data.scan);
+        setBusy('');
+        w.terminate();
+      }
+      if (e.data.type === 'error') {
+        setError(e.data.message);
+        setBusy('');
+        w.terminate();
+      }
+    };
+    w.onerror = () => {
+      setError('文件扫描失败');
+      setBusy('');
+      w.terminate();
+    };
+    w.postMessage({ files: selected, header });
+  };
+  const stats = scan ? titleStats(scan.rows, main) : null;
+  return (
+    <section className="ann-import">
+      <h2>{existing ? '更新数据源 / 恢复源数据' : '创建标注项目'}</h2>
+      <p>
+        创建项目会在设备 IndexedDB
+        中保存一份数据工作副本，用于关闭后继续标注。不会修改原始文件，不上传服务器。
+      </p>
+      <div className="ann-controls">
+        <button onClick={() => input.current?.click()}>导入标注文件</button>
+        <button onClick={() => folder.current?.click()}>导入标注文件夹</button>
+        <Help
+          title="目录扫描"
+          steps={['目录 / raw.json + processed.json', '按文件名筛选一种', '预览字段与 ID']}
+        >
+          只读取所选名称，避免同一帖子读两次。显示的目录路径用于区分来源，不修改文件。
+        </Help>
+        <input
+          ref={input}
+          aria-label="标注文件"
+          type="file"
+          multiple
+          hidden
+          accept=".json,.jsonl,.csv,.tsv,.txt"
+          onChange={(e) => {
+            setFiles(Array.from(e.target.files || []));
+            setPattern('');
+            setScan(null);
+            e.target.value = '';
+          }}
+        />
+        <input
+          ref={(el) => {
+            folder.current = el;
+            el?.setAttribute('webkitdirectory', '');
+          }}
+          aria-label="标注文件夹"
+          type="file"
+          multiple
+          hidden
+          onChange={(e) => {
+            setFiles(Array.from(e.target.files || []));
+            setPattern('raw.json');
+            setScan(null);
+            e.target.value = '';
+          }}
+        />
+        {current && (
+          <button
+            onClick={() =>
+              accept({
+                rows: current.rows.map((r) => ({
+                  source: current.name,
+                  data: Object.fromEntries(current.headers.map((h, i) => [h, r[i]])),
+                })),
+                fields: current.headers,
+                files: 1,
+                warnings: [],
+              })
+            }
+          >
+            使用 DataScope 当前导入数据
+          </button>
+        )}
+      </div>
+      {files.length > 0 && (
+        <>
+          <p>
+            发现 {files.length} 个文件 · 支持{' '}
+            {files.filter((f) => /\.(jsonl?|csv|tsv|txt)$/i.test(f.name)).length} 个 · 选中{' '}
+            {selected.length} 个
+          </p>
+          <div className="ann-controls">
+            <label>
+              仅读取文件名
+              <input
+                aria-label="仅读取文件名"
+                placeholder="留空读取所有支持文件"
+                value={pattern}
+                onChange={(e) => {
+                  setPattern(e.target.value);
+                  setScan(null);
+                }}
+              />
+            </label>
+            <button
+              onClick={() => {
+                setPattern('raw.json');
+                setScan(null);
+              }}
+            >
+              只读 raw.json
+            </button>
+            <button
+              onClick={() => {
+                setPattern('processed.json');
+                setScan(null);
+              }}
+            >
+              只读 processed.json
+            </button>
+            <label>
+              表头
+              <select
+                value={String(header)}
+                onChange={(e) => {
+                  setHeader(e.target.value === 'auto' ? 'auto' : e.target.value === 'true');
+                  setScan(null);
+                }}
+              >
+                <option value="auto">自动判断</option>
+                <option value="true">第一行是标题</option>
+                <option value="false">没有标题</option>
+              </select>
+            </label>
+            <button disabled={!selected.length || !!busy} onClick={scanFiles}>
+              扫描所选数据
+            </button>
+          </div>
+          <details>
+            <summary>目录结构（前 200 个路径）</summary>
+            <pre>
+              {files
+                .slice(0, 200)
+                .map((f) => f.webkitRelativePath || f.name)
+                .join('\n')}
+            </pre>
+          </details>
+        </>
+      )}
+      {busy && (
+        <p role="status">
+          {busy}{' '}
+          <button
+            onClick={() => {
+              worker.current?.terminate();
+              setBusy('');
+            }}
+          >
+            取消扫描
+          </button>
+        </p>
+      )}
+      {error && <p role="alert">{error}</p>}
+      {scan && (
+        <>
+          <h3>
+            扫描完成 · {scan.files} 文件 / {scan.rows.length} 条 / {scan.fields.length} 字段
+          </h3>
+          <div className="ann-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>来源</th>
+                  {scan.fields.slice(0, 10).map((f) => (
+                    <th key={f}>{f}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {scan.rows.slice(0, 5).map((r, i) => (
+                  <tr key={i}>
+                    <td>{r.source}</td>
+                    {scan.fields.slice(0, 10).map((f) => (
+                      <td key={f}>{display(r.data[f]).slice(0, 300)}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="ann-controls">
+            {!existing && (
+              <label>
+                项目名称
+                <input
+                  aria-label="项目名称"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </label>
+            )}
+            <label>
+              主显示字段
+              <select
+                aria-label="主显示字段"
+                value={main}
+                onChange={(e) => setMain(e.target.value)}
+              >
+                {scan.fields.map((f) => (
+                  <option key={f}>{f}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              唯一 ID 字段
+              <select
+                aria-label="唯一 ID 字段"
+                value={idField}
+                disabled={!!existing}
+                onChange={(e) => {
+                  setIdField(e.target.value);
+                  setPrepared(null);
+                }}
+              >
+                <option value="">内容 SHA-256（自动生成）</option>
+                {scan.fields.map((f) => (
+                  <option key={f}>{f}</option>
+                ))}
+              </select>
+            </label>
+            <Help title="唯一 ID" steps={['post_id = 123', '标注绑定 123', '顺序变化仍对应']}>
+              重复或空 ID 会阻止创建。没有 ID 时使用内容 SHA-256；内容变化会产生新
+              ID，完全相同的记录会报告重复。
+            </Help>
+          </div>
+          <div className="ann-controls">
+            辅助显示字段：
+            {scan.fields
+              .filter((f) => f !== main)
+              .map((f) => (
+                <label key={f}>
+                  <input
+                    type="checkbox"
+                    checked={aux.includes(f)}
+                    onChange={(e) =>
+                      setAux(e.target.checked ? [...aux, f] : aux.filter((x) => x !== f))
+                    }
+                  />
+                  {f}
+                </label>
+              ))}
+          </div>
+          {stats && (
+            <details open>
+              <summary>标题 / 主字段质量统计</summary>
+              <p>
+                总数 {stats.total} · 空值 {stats.empty} · 重复 {stats.duplicates} · 唯一{' '}
+                {stats.unique} · 平均长度 {stats.average.toFixed(1)}
+              </p>
+              <p>最长：{stats.longest.slice(0, 300)}</p>
+              <p>最短：{stats.shortest.slice(0, 300)}</p>
+            </details>
+          )}
+          <label>
+            <input type="checkbox" checked={review} onChange={(e) => setReview(e.target.checked)} />
+            已核对数据、字段和本地保存方式
+          </label>
+          <button
+            disabled={!review || !!busy || !main || !name.trim()}
+            onClick={async () => {
+              setError('');
+              setBusy('校验唯一 ID…');
+              try {
+                if (scan.rows.length > limits.rows) throw new Error('最多 100,000 条记录');
+                const rows = await identify(scan.rows, idField);
+                if (existing) {
+                  setPrepared(rows);
+                } else {
+                  const at = new Date().toISOString(),
+                    id = crypto.randomUUID();
+                  await onCreate({
+                    project: {
+                      id,
+                      name: name.trim(),
+                      source:
+                        files[0]?.webkitRelativePath || files[0]?.name || 'DataScope 当前数据',
+                      createdAt: at,
+                      updatedAt: at,
+                      mode: 'single',
+                      mainField: main,
+                      auxiliary: aux,
+                      idField,
+                      fields: scan.fields,
+                      labels: [],
+                      currentId: rows[0]?.id || '',
+                      filter: { status: 'all', label: '', search: '' },
+                      autoNext: true,
+                      revision: 0,
+                      total: rows.length,
+                      labeled: 0,
+                      skipped: 0,
+                    },
+                    rows,
+                    annotations: {},
+                    history: [],
+                    session: {
+                      id: crypto.randomUUID(),
+                      projectId: id,
+                      start: at,
+                      end: at,
+                      count: 0,
+                    },
+                  });
+                }
+              } catch (e) {
+                setError(String(e));
+              } finally {
+                setBusy('');
+              }
+            }}
+          >
+            {existing ? '对比数据源变化' : '创建项目并开始标注'}
+          </button>
+          {existing && prepared && (
+            <section className="ann-notice">
+              <p>
+                {(() => {
+                  const d = sourceChanges(existing.rows, prepared);
+                  return `已有 ${d.existing} · 新增 ${d.added} · 缺失 ${d.missing} · 内容改变 ${d.changed.length}`;
+                })()}
+              </p>
+              <p>
+                同 ID
+                且内容未变的标注保留。内容改变的记录转为未标注，旧值保留在历史。缺失记录的标注保留在项目备份中，不参与当前数据导出。
+              </p>
+              <button onClick={() => void onReplace?.(prepared)}>确认更新当前数据源</button>
+              <button onClick={() => setPrepared(null)}>取消更新</button>
+            </section>
+          )}
+        </>
+      )}
+    </section>
+  );
 }

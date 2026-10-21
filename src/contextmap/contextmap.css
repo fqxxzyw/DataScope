@@ -322,4 +322,7 @@
   }
 }
 
-.contextmap .cm-tabs { flex-direction: row; justify-content: flex-start; }
+.contextmap .cm-tabs {
+  flex-direction: row;
+  justify-content: flex-start;
+}
